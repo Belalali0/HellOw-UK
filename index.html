@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HellOw UK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Poppins:wght@900&display=swap');
+        :root { --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #1e293b; --border: #e2e8f0; --accent: #ffd700; }
+        .dark { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #f1f5f9; --border: #334155; --accent: #ffd700; }
+        
+        /* چاککردنی ڕەنگی نووسینەکان بۆ هەموو بەشەکان */
+        body { font-family: 'Noto Sans Arabic', sans-serif; background-color: var(--bg-main); color: var(--text-main); transition: 0.3s; margin: 0; }
+        h1, h2, h3, p, span, div, input, textarea, select { color: inherit; }
+        
+        .mobile-shell { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-card); position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .brand-text { font-family: 'Poppins', sans-serif; font-weight: 900; }
+        .brand-h { color: #ff5555; } .brand-l-w { color: #94a3b8; } .brand-o { color: #ffd700; } .brand-uk { color: #4ade80; }
+        .nav-bottom { position: fixed; bottom: 0; max-width: 480px; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
+        .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .active-page { display: block; }
+        .active-nav { color: var(--accent) !important; }
+        
+        /* چاککردنی Input لە دارک مۆددا */
+        .input-field { width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; outline: none; color: var(--text-main); }
+        .heart-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 300; background: var(--bg-card); padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #ff5555; width: 85%; max-width: 350px; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="light">
+
+<div id="heart-modal" class="hidden fixed inset-0 bg-black/60 z-[250] flex items-center justify-center">
+    <div class="heart-alert">
+        <i class="fas fa-heart-broken text-red-500 text-5xl mb-4"></i>
+        <p id="heart-msg" class="font-bold text-sm leading-relaxed mb-6"></p>
+        <button onclick="closeHeartModal()" class="bg-gray-800 text-white px-8 py-2 rounded-full font-bold">لابردن</button>
+    </div>
+</div>
+
+<div class="mobile-shell pb-24">
+    <header class="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border)] p-4 flex justify-between items-center z-50">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="handleAdminTrigger()">
+            <i class="fas fa-book-open text-2xl text-[var(--accent)]"></i>
+            <div class="brand-text text-xl">
+                <span class="brand-h">He</span><span class="brand-l-w">ll</span><span class="brand-o">O</span><span class="brand-l-w">w</span> <span class="brand-uk">UK</span>
+                <div id="lang-indicator" class="text-[9px] font-bold text-gray-400 uppercase tracking-[3px]">KU</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <i id="header-heart" onclick="checkHeartStatus()" class="fas fa-heart-broken text-gray-400 text-xl cursor-pointer"></i>
+            <i id="theme-icon" onclick="toggleTheme()" class="fas fa-moon text-gray-900 text-xl cursor-pointer"></i>
+            <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-transparent font-bold text-xs outline-none">
+                <option value="ku">کوردی</option>
+                <option value="ar">العربية</option>
+                <option value="fa">فارسی</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="pages">
+        <main id="home-page" class="page active-page"><div id="post-list" class="space-y-4"></div></main>
+        <main id="info-page" class="page"><div id="info-list" class="space-y-4"></div></main>
+        <main id="muslim-page" class="page"><div id="muslim-list" class="space-y-4"></div></main>
+        <main id="org-page" class="page"><div id="org-list" class="space-y-4"></div></main>
+        <main id="fav-page" class="page">
+            <h2 class="font-bold text-lg mb-4 text-center">دڵخوازەکان</h2>
+            <div id="fav-list" class="space-y-4"></div>
+        </main>
+        <main id="account-page" class="page">
+            <div id="auth-ui" class="space-y-4 text-center">
+                <i class="fas fa-paper-plane text-4xl text-blue-500 mb-2"></i>
+                <h2 class="text-xl font-bold lang-nav" data-key="acc">ئەکاونت</h2>
+                <input type="text" id="reg-user" placeholder="Username" class="input-field">
+                <input type="email" id="reg-email" placeholder="Email" class="input-field">
+                <input type="password" id="reg-pass" placeholder="Password" class="input-field">
+                <div class="flex gap-2">
+                    <button onclick="handleEmailAuth('login')" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">Login</button>
+                    <button onclick="handleEmailAuth('register')" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold">Register</button>
+                </div>
+                <button onclick="loginWithGoogle()" class="w-full bg-white border border-gray-300 py-3 rounded-xl font-bold flex justify-center items-center gap-2">
+                    <img src="https://www.google.com/favicon.ico" class="w-4"> Google
+                </button>
+            </div>
+            <div id="user-profile" class="hidden text-center space-y-4 py-10">
+                <i class="fas fa-user-circle text-6xl text-blue-500"></i>
+                <p id="user-display-name" class="font-bold"></p>
+                <button onclick="auth.signOut()" class="text-red-500 font-bold">Log Out</button>
+            </div>
+        </main>
+    </div>
+
+    <div id="adminModal" class="fixed inset-0 bg-black/80 hidden z-[200] p-4 flex items-center justify-center backdrop-blur-md">
+        <div class="bg-[var(--bg-card)] w-full max-w-sm rounded-3xl p-6">
+            <div class="flex border-b mb-4">
+                <button onclick="switchTab('post')" id="tab-p-btn" class="flex-1 py-2 font-bold text-blue-600">پۆست</button>
+                <button onclick="switchTab('dash')" id="tab-d-btn" class="flex-1 py-2 font-bold opacity-40">داشبۆرد</button>
+                <button onclick="closeAdmin()" class="px-2 text-red-500 font-bold">X</button>
+            </div>
+            <div id="tab-post" class="space-y-2">
+                <input type="text" id="p-title" placeholder="سەردێڕ" class="input-field">
+                <textarea id="p-text" placeholder="ناوەڕۆک" class="input-field"></textarea>
+                <input type="text" id="p-media" placeholder="وێنە (URL)" class="input-field">
+                <div class="flex gap-2">
+                    <select id="p-lang" class="flex-1 p-2 bg-[var(--bg-main)] rounded-lg"><option value="ku">KU</option><option value="ar">AR</option><option value="fa">FA</option><option value="en">EN</option></select>
+                    <select id="p-cat" class="flex-1 p-2 bg-[var(--bg-main)] rounded-lg"><option value="home">هەواڵ</option><option value="info">زانیاری</option><option value="muslim">مسوڵمان</option><option value="org">ڕێکخراو</option></select>
+                </div>
+                <button onclick="submitPost()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">بڵاوکردنەوە</button>
+            </div>
+            <div id="tab-dash" class="hidden space-y-4">
+                <div class="grid grid-cols-3 gap-2 text-[10px] font-bold text-center">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">Account: <span id="acc-count">0</span></div>
+                    <div class="bg-red-50 dark:bg-red-900/20 p-2 rounded">No Acc: <span id="no-acc-count">0</span></div>
+                    <div class="bg-green-50 dark:bg-green-900/20 p-2 rounded">Online: <span id="online-count">1</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="nav-bottom">
+        <button onclick="showPage('home-page', this)" class="nav-item active-nav flex flex-col items-center">
+            <i class="fas fa-home"></i><span class="text-[10px] mt-1 font-bold lang-nav" data-key="news">هەواڵ</span>
+        </button>
+        <button onclick="showPage('info-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-info-circle"></i><span class="text-[10px] mt-1 font-bold lang-nav" data-key="info">زانیاری</span>
+        </button>
+        <button onclick="showPage('muslim-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-mosque"></i><span class="text-[10px] mt-1 font-bold lang-nav" data-key="muslim">مسوڵمان</span>
+        </button>
+        <button onclick="showPage('org-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-hands-helping"></i><span class="text-[10px] mt-1 font-bold lang-nav" data-key="org">ڕێکخراو</span>
+        </button>
+        <button onclick="showPage('account-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
+            <i class="fas fa-user-circle"></i><span class="text-[10px] mt-1 font-bold lang-nav" data-key="acc">ئەکاونت</span>
+        </button>
+    </nav>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD-D5D-Frux74ptEWe62lge8AgKXwY6MJQ",
+        authDomain: "hellowuk-72d77.firebaseapp.com",
+        projectId: "hellowuk-72d77",
+        storageBucket: "hellowuk-72d77.firebasestorage.app",
+        messagingSenderId: "1029264488576",
+        appId: "1:1029264488576:web:d83e815da5ee6831fd4e65"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    window.auth = auth; window.db = db;
+
+    let currentLang = 'ku';
+    let currentUser = null;
+    const langData = {
+        ku: { news: "هەواڵ", info: "زانیاری", muslim: "مسوڵمان", org: "ڕێکخراو", acc: "ئەکاونت", break: "تۆ دڵی منت شکاندووە ئەگەر ئەتەوێ چاکی بکەیتەوە ڕەکاونت دروستبکە" },
+        ar: { news: "أخبار", info: "معلومات", muslim: "مسلم", org: "منظمات", acc: "حساب", break: "لقد كسرت قلبي ، إذا كنت ترغب في إصلاحه ، فأنشئ حسابًا" },
+        fa: { news: "اخبار", info: "اطلاعات", muslim: "مسلمان", org: "سازمان", acc: "حساب", break: "تو قلب من را شکستی اگر می خواهی آن را درست کنی یک حساب کاربری ایجاد کن" },
+        en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", break: "You broke my heart, if you want to fix it create an account" }
+    };
+
+    window.changeLanguage = (l) => {
+        currentLang = l;
+        document.documentElement.dir = l === 'en' ? 'ltr' : 'rtl';
+        document.getElementById('lang-indicator').innerText = l.toUpperCase();
+        document.querySelectorAll('.lang-nav').forEach(el => {
+            el.innerText = langData[l][el.dataset.key];
+        });
+        loadPosts();
+        if(currentUser) loadFavs();
+    };
+
+    window.checkHeartStatus = () => {
+        if(!currentUser) {
+            document.getElementById('heart-msg').innerText = langData[currentLang].break;
+            document.getElementById('heart-modal').classList.remove('hidden');
+        } else {
+            showPage('fav-page', document.querySelector('.nav-item'));
+        }
+    };
+    window.closeHeartModal = () => document.getElementById('heart-modal').classList.add('hidden');
+
+    window.toggleLike = async (postId, title, text, media) => {
+        if(!currentUser) {
+            checkHeartStatus();
+            return;
+        }
+        const favRef = doc(db, "users", currentUser.uid, "favorites", postId);
+        const snap = await getDoc(favRef);
+        if(snap.exists()) {
+            await deleteDoc(favRef);
+        } else {
+            await setDoc(favRef, { title, text, media, time: Date.now() });
+        }
+    };
+
+    function loadPosts() {
+        const q = query(collection(db, "posts"), where("lang", "==", currentLang), orderBy("time", "desc"));
+        onSnapshot(q, (snap) => {
+            const containers = { home: 'post-list', info: 'info-list', muslim: 'muslim-list', org: 'org-list' };
+            Object.values(containers).forEach(id => document.getElementById(id).innerHTML = "");
+            snap.forEach(d => {
+                const p = d.data();
+                const id = d.id;
+                document.getElementById(containers[p.category]).innerHTML += `
+                    <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-4 shadow-sm relative">
+                        ${p.media ? `<img src="${p.media}" class="w-full h-40 object-cover rounded-xl mb-2">` : ''}
+                        <h3 class="font-bold">${p.title}</h3>
+                        <p class="text-xs opacity-70 mb-4">${p.text}</p>
+                        <button onclick="toggleLike('${id}', '${p.title}', '${p.text}', '${p.media}')" class="absolute bottom-3 left-4 text-gray-300 hover:text-red-500">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>`;
+            });
+        });
+    }
+
+    function loadFavs() {
+        if(!currentUser) return;
+        onSnapshot(collection(db, "users", currentUser.uid, "favorites"), (snap) => {
+            const container = document.getElementById('fav-list');
+            container.innerHTML = snap.empty ? "<p class='text-center opacity-50'>هیچ دڵخوازێک نییە</p>" : "";
+            snap.forEach(d => {
+                const p = d.data();
+                container.innerHTML += `
+                    <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-4 shadow-sm">
+                        <h3 class="font-bold">${p.title}</h3>
+                        <p class="text-xs opacity-70">${p.text}</p>
+                    </div>`;
+            });
+        });
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        const headHeart = document.getElementById('header-heart');
+        if(user) {
+            headHeart.className = "fas fa-heart text-red-500 text-xl cursor-pointer";
+            document.getElementById('auth-ui').classList.add('hidden');
+            document.getElementById('user-profile').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = user.displayName || user.email;
+            loadFavs();
+        } else {
+            headHeart.className = "fas fa-heart-broken text-gray-400 text-xl cursor-pointer";
+            document.getElementById('auth-ui').classList.remove('hidden');
+            document.getElementById('user-profile').classList.add('hidden');
+            document.getElementById('fav-list').innerHTML = "";
+        }
+    });
+
+    window.handleEmailAuth = async (type) => {
+        const email = document.getElementById('reg-email').value;
+        const pass = document.getElementById('reg-pass').value;
+        const user = document.getElementById('reg-user').value;
+        try {
+            if(type === 'register') {
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(res.user, { displayName: user });
+                await setDoc(doc(db, "users", res.user.uid), { username: user, email, role: 'user' });
+            } else { await signInWithEmailAndPassword(auth, email, pass); }
+        } catch(e) { alert(e.message); }
+    };
+
+    window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
+
+    onSnapshot(collection(db, "users"), (snap) => {
+        document.getElementById('acc-count').innerText = snap.size;
+        window.allUsers = [];
+        snap.forEach(d => window.allUsers.push({id: d.id, ...d.data()}));
+    });
+
+    window.submitPost = async () => {
+        await addDoc(collection(db, "posts"), {
+            title: document.getElementById('p-title').value,
+            text: document.getElementById('p-text').value,
+            media: document.getElementById('p-media').value,
+            lang: document.getElementById('p-lang').value,
+            category: document.getElementById('p-cat').value,
+            time: Date.now()
+        });
+        closeAdmin();
+    };
+
+    changeLanguage('ku');
+</script>
+
+<script>
+    function showPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById(id).classList.add('active-page');
+        document.querySelectorAll('.nav-item').forEach(n => {
+            n.classList.add('text-gray-400');
+            n.classList.remove('active-nav');
+        });
+        if(btn) {
+            btn.classList.remove('text-gray-400');
+            btn.classList.add('active-nav');
+        }
+    }
+    function handleAdminTrigger() { document.getElementById('adminModal').classList.remove('hidden'); }
+    function closeAdmin() { document.getElementById('adminModal').classList.add('hidden'); }
+    
+    // فەنکشنی تێم چاککراوە بۆ گۆڕینی ئایکۆن و ڕەنگەکان
+    function toggleTheme() { 
+        const body = document.body;
+        const icon = document.getElementById('theme-icon');
+        
+        body.classList.toggle('dark');
+        
+        if(body.classList.contains('dark')) {
+            // کاتێک دارک مۆدە
+            icon.className = "fas fa-sun text-yellow-300 text-xl cursor-pointer";
+        } else {
+            // کاتێک لایت مۆدە
+            icon.className = "fas fa-moon text-gray-900 text-xl cursor-pointer";
+        }
+    }
+
+    function switchTab(t) {
+        document.getElementById('tab-post').classList.toggle('hidden', t !== 'post');
+        document.getElementById('tab-dash').classList.toggle('hidden', t !== 'dash');
+        document.getElementById('tab-p-btn').classList.toggle('opacity-40', t !== 'post');
+        document.getElementById('tab-d-btn').classList.toggle('opacity-40', t !== 'dash');
+    }
+    function searchUser(v) {
+        const u = window.allUsers.find(x => x.email.includes(v));
+        if(u && v.length > 2) {
+            document.getElementById('search-res').classList.remove('hidden');
+            document.getElementById('res-name').innerText = u.username;
+            document.getElementById('res-email').innerText = u.email;
+            window.targetId = u.id;
+        } else { document.getElementById('search-res').classList.add('hidden'); }
+    }
+    async function updateUserRole(r) {
+        if(window.targetId) {
+            const userRef = doc(window.db, "users", window.targetId);
+            await updateDoc(userRef, {role: r});
+            alert("Updated!");
+        }
+    }
+</script>
+</body>
+                  </html>
+                  
