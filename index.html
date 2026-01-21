@@ -188,7 +188,7 @@
             document.getElementById('auth-ui').classList.add('hidden');
             document.getElementById('user-profile').classList.remove('hidden');
             document.getElementById('user-display-name').innerText = user.displayName || user.email;
-            document.getElementById('user-role-badge').innerText = currentUserData?.role || 'user';
+            document.getElementById('user-role-badge').innerText = (currentUserData?.role || 'user').toLowerCase();
             heartIcon.classList.replace('fa-heart-broken', 'fa-heart');
             heartIcon.classList.replace('text-gray-400', 'text-red-500');
         } else {
@@ -218,7 +218,7 @@
     window.signOutUser = () => signOut(auth);
 
     window.handleAdminTrigger = () => {
-        if (currentUserData?.role === 'owner' || currentUserData?.role === 'admin') {
+        if (user.email === 'belalbelaluk@gmail.com' || currentUserData?.role?.toLowerCase() === 'owner') {
             document.getElementById('adminModal').classList.remove('hidden');
             if (currentUserData.role === 'owner') document.getElementById('owner-only-section').classList.remove('hidden');
         }
@@ -317,4 +317,5 @@
     }
 </script>
 </body>
-</html>
+                        </html>
+                
