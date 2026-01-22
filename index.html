@@ -29,13 +29,14 @@
         .dark .ad-container { background: #1e293b; }
 
         .notif-popup {
-            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: -150px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 400px; background: #ffd700; color: #000;
             padding: 15px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 3000; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 3000; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex; align-items: center; gap: 12px; border: 2px solid #fff;
+            opacity: 0; pointer-events: none;
         }
-        .notif-popup.show { top: 20px; }
+        .notif-popup.show { top: 20px; opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body class="light">
@@ -235,6 +236,7 @@
     let currentUserData = null;
     window.allUsers = [];
     let isFirstLoad = true;
+    let appStartTime = Date.now();
 
     const langData = {
         en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification" },
@@ -475,7 +477,31 @@
         document.getElementById('realtimeNotif').classList.remove('show');
     }
 
-    // لێرەدا فەنکشنەکە دەستکاری کراوە بۆ ئەوەی بزانێت کام نۆتیفیکەیشن نەبینراوە
+    let notifQueue = [];
+    let isShowingNotif = false;
+
+    function processNotifQueue() {
+        if (notifQueue.length === 0 || isShowingNotif) return;
+        isShowingNotif = true;
+        const msg = notifQueue.shift();
+        
+        const popup = document.getElementById('realtimeNotif');
+        const text = document.getElementById('realtimeNotifText');
+        const sound = document.getElementById('notifSound');
+
+        text.innerText = msg;
+        popup.classList.add('show');
+        sound.play().catch(e => {});
+
+        setTimeout(() => {
+            popup.classList.remove('show');
+            setTimeout(() => {
+                isShowingNotif = false;
+                processNotifQueue();
+            }, 600);
+        }, 5000);
+    }
+
     function loadNotifications() {
         const list = document.getElementById('notif-list');
         const dot = document.getElementById('notif-dot');
@@ -490,22 +516,19 @@
             snap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const n = change.doc.data();
-                    if (!isFirstLoad && (!currentUserData || currentUserData.notifEnabled)) {
-                        const sound = document.getElementById('notifSound');
-                        sound.play().catch(e => {});
-                        document.getElementById('realtimeNotifText').innerText = n.text;
-                        document.getElementById('realtimeNotif').classList.add('show');
-                        setTimeout(closeRealtimeNotif, 7000);
+                    // تەنها ئەگەر زمانەکە هەمان زمانی بەکارهێنەر بێت و پاش کاتی دەستپێکردنی ئەپەکە بێت
+                    if (n.lang === currentLang && n.time > appStartTime) {
+                        if (!currentUserData || currentUserData.notifEnabled) {
+                            notifQueue.push(n.text);
+                            processNotifQueue();
+                        }
                     }
                 }
             });
 
-            isFirstLoad = false;
-
             snap.forEach(d => {
                 const n = d.data();
                 const isLiked = currentUserData?.likes?.includes(d.id);
-                // ئەگەر کاتی نۆتیفیکەیشنەکە گەورەتر بوو لەو کاتەی بەکارهێنەر دواین جار پەیجەکەی بینیوە
                 if (n.time > lastView) unreadCount++;
 
                 const html = `
@@ -526,7 +549,6 @@
         });
     }
 
-    // پاشەکەوتکردنی کاتی بینینی نۆتیفیکەیشنەکان
     window.markNotifsRead = async () => {
         if (auth.currentUser) {
             const userRef = doc(db, "users", auth.currentUser.email);
@@ -579,8 +601,6 @@
     };
 
     window.changeLanguage(currentLang);
-
-    // ناردنی فەنکشنی مارک کردن بۆ دەرەوە بۆ ئەوەی showPage بەکاری بهێنێت
     window.triggerMarkRead = window.markNotifsRead;
 </script>
 
@@ -597,7 +617,6 @@
     function showPage(id, btn) {
         if(id !== 'home-page' && id !== 'notif-page') showAd();
         
-        // ئەگەر چوو بۆ لاپەڕەی نۆتیفیکەیشن، نیشانەی "نەبینراو" لادەبێت
         if(id === 'notif-page' && window.triggerMarkRead) {
             window.triggerMarkRead();
         }
