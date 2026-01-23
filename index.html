@@ -8,19 +8,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Poppins:wght@900&display=swap');
-        :root { --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #1e293b; --border: #e2e8f0; --accent: #ffd700; }
-        .dark { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #f1f5f9; --border: #334155; --accent: #ffd700; }
+        :root { --bg-main: #f1f5f9; --bg-card: #ffffff; --text-main: #1e293b; --text-sub: #475569; --border: #e2e8f0; --accent: #ffd700; }
+        .dark { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #f1f5f9; --text-sub: #cbd5e1; --border: #334155; --accent: #ffd700; }
+        
         body { font-family: 'Noto Sans Arabic', 'Poppins', sans-serif; background-color: var(--bg-main); color: var(--text-main); transition: 0.3s; margin: 0; overflow-x: hidden; direction: rtl !important; text-align: right !important; }
         .mobile-shell { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-card); position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
         .nav-bottom { position: fixed; bottom: 0; max-width: 480px; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
         .active-page { display: block; }
         .active-nav { color: var(--accent) !important; }
-        .input-field { width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; outline: none; color: inherit; margin-bottom: 10px; text-align: right; }
+        .input-field { width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; outline: none; color: var(--text-main); margin-bottom: 10px; text-align: right; }
         .custom-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: var(--bg-card); padding: 20px; border-radius: 20px; border: 2px solid #ff5555; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .like-btn.active { color: #ff5555 !important; }
-        .media-preview { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; display: none; border: 2px dashed #ccc; }
         .notification-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: red; border-radius: 50%; display: none; }
         
         .notif-popup {
@@ -32,6 +32,16 @@
             opacity: 0; pointer-events: none;
         }
         .notif-popup.show { top: 20px; opacity: 1; pointer-events: auto; }
+
+        /* Styles for Favorite Folders */
+        .fav-tab-btn { flex: 1; padding: 12px; font-weight: bold; font-size: 13px; transition: 0.3s; border-radius: 12px; border: 1px solid transparent; color: var(--text-sub); }
+        .fav-tab-btn.active { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+        .dark .fav-tab-btn.active { background: #7f1d1d; color: #fecaca; border-color: #991b1b; }
+
+        /* Fix for Post visibility */
+        .post-card { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); }
+        .post-title { color: var(--text-main); }
+        .post-desc { color: var(--text-sub); }
     </style>
 </head>
 <body class="light">
@@ -52,7 +62,7 @@
 <div id="msgModal" class="hidden fixed inset-0 bg-black/70 z-[1000] flex items-center justify-center p-4">
     <div class="custom-alert">
         <i id="msgIcon" class="fas fa-exclamation-circle text-4xl mb-3 text-red-500"></i>
-        <p id="msgText" class="font-bold text-sm leading-relaxed mb-5"></p>
+        <p id="msgText" class="font-bold text-sm leading-relaxed mb-5 text-[var(--text-main)]"></p>
         <button onclick="closeMsg()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold lang-nav" data-key="okBtn">OK</button>
     </div>
 </div>
@@ -73,7 +83,7 @@
             </div>
             <i id="header-heart" onclick="window.checkHeartStatus()" class="fas fa-heart-broken text-gray-400 text-xl cursor-pointer"></i>
             <i id="theme-icon" onclick="toggleTheme()" class="fas fa-moon text-xl cursor-pointer"></i>
-            <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-transparent font-bold text-xs outline-none">
+            <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-transparent font-bold text-xs outline-none text-[var(--text-main)]">
                 <option value="en">EN</option>
                 <option value="ku">KU</option>
                 <option value="ar">AR</option>
@@ -91,8 +101,8 @@
         <main id="notif-page" class="page">
             <div class="flex flex-col items-center mb-6">
                 <div class="flex justify-between w-full items-center mb-4">
-                    <h2 class="font-bold lang-nav" data-key="notifTitle">Notifications</h2>
-                    <button onclick="window.toggleNotifStatus()" class="text-xs flex items-center gap-1 bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                    <h2 class="font-bold lang-nav text-[var(--text-main)]" data-key="notifTitle">Notifications</h2>
+                    <button onclick="window.toggleNotifStatus()" class="text-xs flex items-center gap-1 bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full text-[var(--text-main)]">
                         <span id="notif-status-text">ON</span>
                         <i id="notif-toggle-icon" class="fas fa-bell"></i>
                     </button>
@@ -105,13 +115,31 @@
         </main>
 
         <main id="fav-page" class="page">
-            <h2 class="text-center font-bold mb-4 lang-nav" data-key="favTitle">Favorite Posts</h2>
-            <div id="fav-list" class="space-y-4 text-center py-10 opacity-50 lang-nav" data-key="emptyFav">Nothing here yet</div>
+            <h2 class="text-center font-black mb-6 lang-nav text-xl text-red-500" data-key="favTitle">Favorites</h2>
+            
+            <div class="flex gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-2xl mb-6">
+                <button onclick="switchFavTab('posts')" id="btn-fav-posts" class="fav-tab-btn active flex items-center justify-center gap-2">
+                    <i class="fas fa-newspaper"></i>
+                    <span class="lang-nav" data-key="favPosts">Posts</span>
+                </button>
+                <button onclick="switchFavTab('notifs')" id="btn-fav-notifs" class="fav-tab-btn flex items-center justify-center gap-2">
+                    <i class="fas fa-bullhorn"></i>
+                    <span class="lang-nav" data-key="favNotifs">Alerts</span>
+                </button>
+            </div>
+
+            <div id="fav-posts-folder" class="space-y-4">
+                <div id="fav-post-list" class="space-y-4"></div>
+            </div>
+
+            <div id="fav-notifs-folder" class="hidden space-y-4">
+                <div id="fav-notif-list" class="space-y-3"></div>
+            </div>
         </main>
 
         <main id="account-page" class="page">
             <div id="auth-ui" class="space-y-4 text-center">
-                <h2 class="text-xl font-bold lang-nav" data-key="acc">Account</h2>
+                <h2 class="text-xl font-bold lang-nav text-[var(--text-main)]" data-key="acc">Account</h2>
                 <input type="text" id="reg-user" placeholder="Username" class="input-field lang-placeholder" data-key="phUser">
                 <input type="email" id="reg-email" placeholder="Email" class="input-field lang-placeholder" data-key="phEmail">
                 <input type="password" id="reg-pass" placeholder="Password" class="input-field lang-placeholder" data-key="phPass">
@@ -122,7 +150,7 @@
             </div>
             <div id="user-profile" class="hidden text-center space-y-4 py-10">
                 <i class="fas fa-user-circle text-7xl text-blue-500"></i>
-                <p id="user-display-name" class="text-lg font-bold"></p>
+                <p id="user-display-name" class="text-lg font-bold text-[var(--text-main)]"></p>
                 <p id="user-role-badge" class="text-xs font-black text-blue-500 uppercase border border-blue-500 px-2 py-1 rounded inline-block"></p>
                 <br>
                 <button onclick="window.signOutUser()" class="text-red-500 font-bold border-b border-red-500 lang-nav" data-key="logout">Log Out</button>
@@ -144,20 +172,20 @@
                 <textarea id="p-text" placeholder="Content" class="input-field h-20"></textarea>
                 <input type="text" id="p-external-link" placeholder="External Link (URL)" class="input-field">
                 <div class="mb-3">
-                    <label class="block text-[10px] font-bold mb-1 opacity-60">Upload Photo/Video:</label>
-                    <input type="file" id="p-file" accept="image/*,video/*" class="text-xs mb-2">
+                    <label class="block text-[10px] font-bold mb-1 opacity-60 text-[var(--text-main)]">Upload Photo/Video:</label>
+                    <input type="file" id="p-file" accept="image/*,video/*" class="text-xs mb-2 text-[var(--text-main)]">
                     <progress id="upload-progress" value="0" max="100" class="w-full h-1 hidden"></progress>
                 </div>
                 <div class="flex gap-2 mb-4 text-xs font-bold">
-                    <select id="p-lang" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)]"><option value="en">English</option><option value="ku" selected>Kurdî</option><option value="ar">عربي</option><option value="fa">فارسی</option></select>
-                    <select id="p-cat" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)]"><option value="home">News</option><option value="info">Info</option><option value="muslim">Muslim</option><option value="org">Org</option></select>
+                    <select id="p-lang" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-[var(--text-main)]"><option value="en">English</option><option value="ku" selected>Kurdî</option><option value="ar">عربي</option><option value="fa">فارسی</option></select>
+                    <select id="p-cat" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-[var(--text-main)]"><option value="home">News</option><option value="info">Info</option><option value="muslim">Muslim</option><option value="org">Org</option></select>
                 </div>
                 <button id="publish-btn" onclick="window.submitPost()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-600/20 lang-nav" data-key="publish">Publish</button>
             </div>
 
             <div id="tab-notif" class="hidden">
                 <textarea id="n-text" placeholder="Notification Message..." class="input-field h-32"></textarea>
-                <select id="n-lang" class="w-full p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] mb-4 font-bold">
+                <select id="n-lang" class="w-full p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] mb-4 font-bold text-[var(--text-main)]">
                     <option value="en">English</option>
                     <option value="ku" selected>Kurdî</option>
                     <option value="ar">عربي</option>
@@ -167,9 +195,10 @@
             </div>
 
             <div id="tab-dash" class="hidden">
-                <div class="grid grid-cols-2 gap-2 text-[10px] font-bold text-center mb-4">
-                    <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600"><span class="lang-nav" data-key="totalAcc">Accounts</span>: <span id="acc-count">0</span></div>
-                    <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg text-green-600"><span class="lang-nav" data-key="online">Online</span>: <span id="online-count">0</span></div>
+                <div class="grid grid-cols-3 gap-1 text-[9px] font-bold text-center mb-4">
+                    <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600">Accounts: <span id="acc-count">0</span></div>
+                    <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg text-green-600">Online: <span id="online-count">0</span></div>
+                    <div class="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg text-purple-600">Anon: <span id="anon-count">0</span></div>
                 </div>
                 <input type="text" oninput="window.searchUser(this.value)" placeholder="Search..." class="input-field text-sm">
                 <div id="user-list-admin" class="space-y-2 mt-2 max-h-64 overflow-y-auto"></div>
@@ -198,7 +227,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -223,11 +252,26 @@
     let processedNotifs = new Set(); 
 
     const langData = {
-        en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification", notifPromo: "If you want to get notifications and good energy, please create an account for joyful notifications!", notifEnergy: "If you are bored or tired, visit here every day to get some energy for your day!" },
-        ku: { news: "هەواڵ", info: "زانیاری", muslim: "مسوڵمان", org: "ڕێکخراو", acc: "ئەکاونت", error: "هەڵەیەک ڕوویدا", heartMsg: "تۆ دڵی منت شکاند، ئەگەر ئەتەوێت چاکی کەیتەوە و دڵخۆشم بکەیت ئەکاونت دروستبکە!", favTitle: "دڵخوازەکان", emptyFav: "هیچ لێرە نییە", phUser: "ناوی بەکارهێنەر", phEmail: "ئیمەیڵ", phPass: "وشەی تێپەڕ", loginBtn: "چوونەژوورەوە", regBtn: "تۆمارکردن", okBtn: "باشە", logout: "چوونە دەرەوە", tabPost: "پۆست", tabDash: "داشبۆرد", publish: "بڵاوکردنەوە", totalAcc: "ئەکاونتەکان", online: "ئۆنڵاین", fillAll: "خانەکان پڕبکەرەوە", tabNotif: "نۆتیفیکەیشن", notifTitle: "ئاگادارییەکان", newNotif: "ئاگادارییەکی نوێ", notifPromo: "ئەگەر ئەتەوێت نۆتیفیکەیشن و ئینێرجی باش وەر بگریت ئەکاونت دروست بکە بۆ بینینی نۆتیفیکەیشنی دڵخۆشکەر!", notifEnergy: "ئەگەر بێتاقەتی، بێزاری هەموو ڕۆژێک سەردانی ئێرە بکە بۆ ئەوەی کەمێک ئینێرجی وەر بگری بۆ ڕۆژەکەت!" },
-        ar: { news: "أخبار", info: "معلومات", muslim: "مسلم", org: "منظمات", acc: "حساب", error: "خطأ، حاول مجدداً", heartMsg: "لقد كسرت قلبي! إذا كنت تريد إصلاحه وإسعادي، يرجى إنشاء حساب.", favTitle: "المفضلة", emptyFav: "لا يوجد شيء", phUser: "المستخدم", phEmail: "الايميل", phPass: "كلمة السر", loginBtn: "دخول", regBtn: "تسجيل", okBtn: "حسناً", logout: "خروج", tabPost: "نشر", tabDash: "لوحة التحكم", publish: "نشر", totalAcc: "الحسابات", online: "متصل", fillAll: "املأ الحقول", tabNotif: "إشعار", notifTitle: "الإشعارات", newNotif: "إشعار جديد", notifPromo: "إذا كنت ترغب في تلقي الإشعارات والطاقة الجيدة، يرجى إنشاء حساب لمشاهدة الإشعارات السعيدة!", notifEnergy: "إذا كنت تشعر بالملل أو التعب، قم بزيارة هنا كل يوم للحصول على بعض الطاقة ليومك!" },
-        fa: { news: "اخبار", info: "اطلاعات", muslim: "مسلمان", org: "سازمان", acc: "حساب", error: "خطا، دوباره تلاش کنید", heartMsg: "تو قلب مرا شکستی! اگر می‌خواهی آن را ترمیم کنی و مرا خوشحال کنی، لطفاً یک حساب کاربری بساز.", favTitle: "علاقه‌مندی‌ها", emptyFav: "چیزی نیست", phUser: "نام کاربری", phEmail: "ایمیل", phPass: "رمز عبور", loginBtn: "ورود", regBtn: "ثبت نام", okBtn: "باشه", logout: "خروج", tabPost: "پست", tabDash: "داشبورد", publish: "انتشار", totalAcc: "حساب‌ها", online: "آنلاین", fillAll: "فیلدها را پر کنید", tabNotif: "اعلان", notifTitle: "اعلان‌ها", newNotif: "اعلان جدید", notifPromo: "اگر می‌خواهید اعلان‌ها و انرژی خوب دریافت کنید، لطفاً برای دیدن اعلان‌های شاد یک حساب کاربری بسازید!", notifEnergy: "اگر بی‌حوصله یا خسته هستید، هر روز از اینجا دیدن کنید تا برای روزتان انرژی بگیرید!" }
+        en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", favNotifs: "Alerts", favPosts: "Posts", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification", notifPromo: "If you want to get notifications and good energy, please create an account for joyful notifications!", notifEnergy: "If you are bored or tired, visit here every day to get some energy for your day!" },
+        ku: { news: "هەواڵ", info: "زانیاری", muslim: "مسوڵمان", org: "ڕێکخراو", acc: "ئەکاونت", error: "هەڵەیەک ڕوویدا", heartMsg: "تۆ دڵی منت شکاند، ئەگەر ئەتەوێت چاکی کەیتەوە و دڵخۆشم بکەیت ئەکاونت دروستبکە!", favTitle: "دڵخوازەکان", favNotifs: "ئاگادارییەکان", favPosts: "پۆستەکان", emptyFav: "هیچ لێرە نییە", phUser: "ناوی بەکارهێنەر", phEmail: "ئیمەیڵ", phPass: "وشەی تێپەڕ", loginBtn: "چوونەژوورەوە", regBtn: "تۆمارکردن", okBtn: "باشە", logout: "چوونە دەرەوە", tabPost: "پۆست", tabDash: "داشبۆرد", publish: "بڵاوکردنەوە", totalAcc: "ئەکاونتەکان", online: "ئۆنڵاین", fillAll: "خانەکان پڕبکەرەوە", tabNotif: "نۆتیفیکەیشن", notifTitle: "ئاگادارییەکان", newNotif: "ئاگادارییەکی نوێ", notifPromo: "ئەگەر ئەتەوێت نۆتیفیکەیشن و ئینێرجی باش وەر بگریت ئەکاونت دروست بکە بۆ بینینی نۆتیفیکەیشنی دڵخۆشکەر!", notifEnergy: "ئەگەر بێتاقەتی، بێزاری هەموو ڕۆژێک سەردانی ئێرە بکە بۆ ئەوەی کەمێک ئینێرجی وەر بگری بۆ ڕۆژەکەت!" },
+        ar: { news: "أخبار", info: "معلومات", muslim: "مسلم", org: "منظمات", acc: "حساب", error: "خطأ، حاول مجدداً", heartMsg: "لقد كسرت قلبي! إذا كنت تريد إصلاحه وإسعادي، يرجى إنشاء حساب.", favTitle: "المفضلة", favNotifs: "الإشعارات", favPosts: "المنشورات", emptyFav: "لا يوجد شيء", phUser: "المستخدم", phEmail: "الايميل", phPass: "كلمة السر", loginBtn: "دخول", regBtn: "تسجيل", okBtn: "حسناً", logout: "خروج", tabPost: "نشر", tabDash: "لوحة التحكم", publish: "نشر", totalAcc: "الحسابات", online: "متصل", fillAll: "املأ الحقول", tabNotif: "إشعار", notifTitle: "الإشعارات", newNotif: "إشعار جديد", notifPromo: "إذا كنت ترغب في تلقي الإشعارات والطاقة الجيدة، يرجى إنشاء حساب لمشاهدة الإشعارات السعيدة!", notifEnergy: "إذا كنت تشعر بالملل أو التعب، قم بزيارة هنا كل يوم للحصول على بعض الطاقة ليومك!" },
+        fa: { news: "اخبار", info: "اطلاعات", muslim: "مسلمان", org: "سازمان", acc: "حساب", error: "خطا، دوباره تلاش کنید", heartMsg: "تو قلب مرا شکستی! اگر می‌خواهی آن را ترمیم کنی و مرا خوشحال کنی، لطفاً یک حساب کاربری بساز.", favTitle: "علاقه‌مندی‌ها", favNotifs: "اعلان‌ها", favPosts: "پست‌ها", emptyFav: "چیزی نیست", phUser: "نام کاربری", phEmail: "ایمیل", phPass: "رمز عبور", loginBtn: "ورود", regBtn: "ثبت نام", okBtn: "باشه", logout: "خروج", tabPost: "پست", tabDash: "داشبورد", publish: "انتشار", totalAcc: "حساب‌ها", online: "آنلاین", fillAll: "فیلدها را پر کنید", tabNotif: "اعلان", notifTitle: "اعلان‌ها", newNotif: "اعلان جدید", notifPromo: "اگر می‌خواهید اعلان‌ها و انرژی خوب دریافت کنید، لطفاً برای دیدن اعلان‌های شاد یک حساب کاربری بسازید!", notifEnergy: "اگر بی‌حوصله یا خسته هستید، هر روز از اینجا دیدن کنید تا برای روزتان انرژی بگیرید!" }
     };
+
+    function timeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + "y ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + "mo ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + "d ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + "h ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + "m ago";
+        return Math.floor(seconds) + "s ago";
+    }
 
     window.showAlert = (text, icon = "fa-exclamation-circle") => {
         document.getElementById('msgText').innerText = text;
@@ -255,6 +299,16 @@
             showPage('fav-page');
         }
     };
+
+    async function trackAnonymous() {
+        if (!auth.currentUser) {
+            const anonId = localStorage.getItem('anonId') || 'anon_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('anonId', anonId);
+            await setDoc(doc(db, "online_anon", anonId), { lastSeen: Date.now() });
+        }
+    }
+    setInterval(trackAnonymous, 60000);
+    trackAnonymous();
 
     onAuthStateChanged(auth, async (user) => {
         const heartIcon = document.getElementById('header-heart');
@@ -425,17 +479,20 @@
                 if(!currentUserData.likes) currentUserData.likes = [];
                 currentUserData.likes.push(postId);
             }
+            // Force reload lists to update Favorites page in real-time
+            loadPosts();
+            loadNotifications();
         } catch(e) { console.error(e); }
     };
 
     function loadPosts() {
         const q = query(collection(db, "posts"), where("lang", "==", currentLang), orderBy("time", "desc"));
         onSnapshot(q, (snap) => {
-            const containers = { home: 'post-list', info: 'info-list', muslim: 'muslim-list', org: 'org-list', fav: 'fav-list' };
+            const containers = { home: 'post-list', info: 'info-list', muslim: 'muslim-list', org: 'org-list' };
             Object.values(containers).forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = ""; });
-            let hasFavs = false;
-            const isAdmin = currentUserData && (currentUserData.role === 'owner' || currentUserData.role === 'admin');
-
+            if(document.getElementById('fav-post-list')) document.getElementById('fav-post-list').innerHTML = "";
+            
+            let hasFavPost = false;
             snap.forEach(d => {
                 const p = d.data();
                 const isLiked = currentUserData?.likes?.includes(d.id);
@@ -444,24 +501,35 @@
                     if(p.mediaType === 'video') mediaHtml = `<video src="${p.media}" controls class="w-full h-auto rounded-xl mb-3 max-h-60 bg-black"></video>`;
                     else mediaHtml = `<img src="${p.media}" class="w-full h-44 object-cover rounded-xl mb-3">`;
                 }
-                const postHtml = `<div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-4 shadow-sm mb-4 relative">
-                    ${isAdmin ? `<button onclick="window.deleteItem('${d.id}', 'post')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-2 rounded-lg text-xs font-bold z-10"><i class="fas fa-trash"></i></button>` : ''}
+                const postHtml = `<div class="post-card rounded-2xl p-4 shadow-sm mb-4 relative">
+                    ${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteItem('${d.id}', 'post')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-2 rounded-lg text-xs font-bold z-10"><i class="fas fa-trash"></i></button>` : ''}
                     <div onclick="${p.externalLink ? `window.open('${p.externalLink}', '_blank')` : ''}" class="${p.externalLink ? 'cursor-pointer' : ''}">
                         ${mediaHtml}
                         <div class="flex justify-between items-start">
                              <button onclick="event.stopPropagation(); window.toggleLike('${d.id}', 'post')" class="like-btn ${isLiked ? 'active' : 'text-gray-300'}"><i class="fas fa-heart"></i> <span class="text-[10px]">${p.likesCount || 0}</span></button>
                              <div class="text-right flex-1">
-                                <h3 class="font-bold text-md">${p.title}</h3>
-                                <p class="text-xs opacity-70 mt-1">${p.text}</p>
-                                ${p.externalLink ? `<span class="text-[10px] text-blue-500 underline mt-2 block">Visit Link <i class="fas fa-external-link-alt"></i></span>` : ''}
+                                <h3 class="post-title font-bold text-md">${p.title}</h3>
+                                <p class="post-desc text-xs mt-1">${p.text}</p>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-[9px] opacity-40 text-[var(--text-sub)]">${timeAgo(p.time)}</span>
+                                    ${p.externalLink ? `<span class="text-[10px] text-blue-500 underline">Link <i class="fas fa-external-link-alt"></i></span>` : ''}
+                                </div>
                              </div>
                         </div>
                     </div>
                 </div>`;
+                
                 if(document.getElementById(containers[p.category])) document.getElementById(containers[p.category]).innerHTML += postHtml;
-                if(isLiked) { document.getElementById('fav-list').innerHTML += postHtml; hasFavs = true; }
+                
+                if(isLiked && document.getElementById('fav-post-list')) {
+                    document.getElementById('fav-post-list').innerHTML += postHtml;
+                    hasFavPost = true;
+                }
             });
-            if(hasFavs) document.getElementById('fav-list').classList.remove('opacity-50');
+            
+            if(!hasFavPost && document.getElementById('fav-post-list')) {
+                document.getElementById('fav-post-list').innerHTML = `<p class="text-center py-10 opacity-40 text-xs text-[var(--text-sub)] lang-nav" data-key="emptyFav">${langData[currentLang].emptyFav}</p>`;
+            }
         });
     }
 
@@ -476,47 +544,38 @@
         if (notifQueue.length === 0 || isShowingNotif) return;
         isShowingNotif = true;
         const msg = notifQueue.shift();
-        
         const popup = document.getElementById('realtimeNotif');
         const text = document.getElementById('realtimeNotifText');
         const sound = document.getElementById('notifSound');
-
         text.innerText = msg;
         popup.classList.add('show');
         sound.play().catch(e => {});
-
         setTimeout(() => {
             popup.classList.remove('show');
-            setTimeout(() => {
-                isShowingNotif = false;
-                processNotifQueue();
-            }, 600);
+            setTimeout(() => { isShowingNotif = false; processNotifQueue(); }, 600);
         }, 5000);
     }
 
     function loadNotifications() {
-        if (!auth.currentUser) {
-            document.getElementById('notif-list').innerHTML = `<div class="text-center py-10 opacity-50">${langData[currentLang].notifPromo}</div>`;
-            return;
-        }
-
         const list = document.getElementById('notif-list');
         const dot = document.getElementById('notif-dot');
+        const favNotifList = document.getElementById('fav-notif-list');
         const q = query(collection(db, "notifications"), where("lang", "==", currentLang), orderBy("time", "desc"));
         
         onSnapshot(q, (snap) => {
-            list.innerHTML = "";
+            if(list) list.innerHTML = "";
+            if(favNotifList) favNotifList.innerHTML = "";
+            
             let unreadCount = 0;
-            const isAdmin = currentUserData && (currentUserData.role === 'owner' || currentUserData.role === 'admin');
+            let hasFavNotif = false;
             const lastView = currentUserData?.lastNotifView || 0;
 
             snap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const n = change.doc.data();
-                    const notifId = change.doc.id;
-                    if (n.lang === currentLang && n.time > appStartTime && !processedNotifs.has(notifId)) {
-                        if (currentUserData && currentUserData.notifEnabled) {
-                            processedNotifs.add(notifId);
+                    if (n.lang === currentLang && n.time > appStartTime && !processedNotifs.has(change.doc.id)) {
+                        if (currentUserData?.notifEnabled) {
+                            processedNotifs.add(change.doc.id);
                             notifQueue.push(n.text);
                             processNotifQueue();
                         }
@@ -531,19 +590,28 @@
 
                 const html = `
                     <div class="bg-yellow-50 dark:bg-yellow-900/10 border-r-4 border-yellow-500 p-4 rounded-xl shadow-sm relative">
-                        ${isAdmin ? `<button onclick="window.deleteItem('${d.id}', 'notif')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-1 rounded-md text-[10px] font-bold"><i class="fas fa-trash"></i></button>` : ''}
+                        ${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteItem('${d.id}', 'notif')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-1 rounded-md text-[10px] font-bold"><i class="fas fa-trash"></i></button>` : ''}
                         <div class="flex justify-between items-start">
                              <button onclick="window.toggleLike('${d.id}', 'notif')" class="like-btn ${isLiked ? 'active' : 'text-gray-300'}">
                                 <i class="fas fa-heart"></i> <span class="text-[10px]">${n.likesCount || 0}</span>
                              </button>
-                             <p class="text-sm font-bold flex-1 text-right mr-3">${n.text}</p>
+                             <p class="text-sm font-bold flex-1 text-right mr-3 text-[var(--text-main)]">${n.text}</p>
                              <i class="fas fa-bullhorn text-yellow-600 text-xs"></i>
                         </div>
-                        <div class="text-[9px] opacity-40 text-left mt-2">${new Date(n.time).toLocaleTimeString()}</div>
+                        <div class="text-[9px] opacity-40 text-left mt-2 text-[var(--text-sub)]">${timeAgo(n.time)}</div>
                     </div>`;
-                list.innerHTML += html;
+                if(list) list.innerHTML += html;
+                
+                if(isLiked && favNotifList) {
+                    favNotifList.innerHTML += html;
+                    hasFavNotif = true;
+                }
             });
-            dot.style.display = unreadCount > 0 ? "block" : "none";
+            
+            if(!hasFavNotif && favNotifList) {
+                favNotifList.innerHTML = `<p class="text-center py-10 opacity-40 text-xs text-[var(--text-sub)] lang-nav" data-key="emptyFav">${langData[currentLang].emptyFav}</p>`;
+            }
+            if(dot) dot.style.display = unreadCount > 0 ? "block" : "none";
         });
     }
 
@@ -568,6 +636,15 @@
         renderUserList(window.allUsers);
     });
 
+    onSnapshot(collection(db, "online_anon"), (snap) => {
+        let anonCount = 0; const now = Date.now();
+        snap.forEach(d => {
+            if (now - d.data().lastSeen < 300000) anonCount++;
+            else deleteDoc(doc(db, "online_anon", d.id)); 
+        });
+        document.getElementById('anon-count').innerText = anonCount;
+    });
+
     window.renderUserList = (users) => {
         const list = document.getElementById('user-list-admin');
         if(!list) return; list.innerHTML = "";
@@ -576,7 +653,7 @@
             const isMe = auth.currentUser?.email === u.email;
             list.innerHTML += `<div class="flex flex-col bg-[var(--bg-main)] p-3 rounded-xl mb-2 border border-[var(--border)]">
                 <div class="flex justify-between items-start mb-2">
-                    <div class="text-right"><div class="font-bold text-xs">${u.username || 'User'}</div><div class="text-[10px] opacity-60">${u.email}</div></div>
+                    <div class="text-right text-[var(--text-main)]"><div class="font-bold text-xs">${u.username || 'User'}</div><div class="text-[10px] opacity-60">${u.email}</div></div>
                     <span class="text-[9px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-600 uppercase">${u.role || 'user'}</span>
                 </div>
                 ${(isOwner && !isMe) ? `<div class="flex gap-1 mt-1">
@@ -607,12 +684,31 @@
         if(id === 'notif-page' && window.triggerMarkRead) {
             window.triggerMarkRead();
         }
-
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
         document.getElementById(id).classList.add('active-page');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.replace('active-nav', 'text-gray-400'));
         if(btn && btn.classList.contains('nav-item')) btn.classList.replace('text-gray-400', 'active-nav');
     }
+
+    function switchFavTab(tab) {
+        const postsFolder = document.getElementById('fav-posts-folder');
+        const notifsFolder = document.getElementById('fav-notifs-folder');
+        const btnPosts = document.getElementById('btn-fav-posts');
+        const btnNotifs = document.getElementById('btn-fav-notifs');
+
+        if(tab === 'posts') {
+            postsFolder.classList.remove('hidden');
+            notifsFolder.classList.add('hidden');
+            btnPosts.classList.add('active');
+            btnNotifs.classList.remove('active');
+        } else {
+            postsFolder.classList.add('hidden');
+            notifsFolder.classList.remove('hidden');
+            btnPosts.classList.remove('active');
+            btnNotifs.classList.add('active');
+        }
+    }
+
     function closeAdmin() { document.getElementById('adminModal').classList.add('hidden'); }
     function switchTab(t) {
         document.getElementById('tab-post').classList.toggle('hidden', t !== 'post');
@@ -624,8 +720,10 @@
         });
     }
     function toggleTheme() {
-        document.body.classList.toggle('dark');
-        document.getElementById('theme-icon').className = document.body.classList.contains('dark') ? "fas fa-sun text-yellow-300 text-xl cursor-pointer" : "fas fa-moon text-gray-900 text-xl cursor-pointer";
+        const body = document.body;
+        body.classList.toggle('dark');
+        const isDark = body.classList.contains('dark');
+        document.getElementById('theme-icon').className = isDark ? "fas fa-sun text-yellow-300 text-xl cursor-pointer" : "fas fa-moon text-gray-900 text-xl cursor-pointer";
     }
 </script>
 </body>
