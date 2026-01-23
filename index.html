@@ -23,11 +23,6 @@
         .media-preview { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; display: none; border: 2px dashed #ccc; }
         .notification-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: red; border-radius: 50%; display: none; }
         
-        #adModal { transition: opacity 0.3s ease; }
-        .ad-container { width: 90%; max-width: 350px; background: white; border-radius: 15px; overflow: hidden; position: relative; }
-        .ad-img { width: 100%; height: 250px; object-fit: cover; }
-        .dark .ad-container { background: #1e293b; }
-
         .notif-popup {
             position: fixed; top: -150px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 400px; background: #ffd700; color: #000;
@@ -54,22 +49,6 @@
 
 <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
-<div id="adModal" class="hidden fixed inset-0 bg-black/80 z-[2000] flex items-center justify-center p-4">
-    <div class="ad-container shadow-2xl animate-bounce-short">
-        <div class="p-2 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
-            <span class="text-[10px] font-bold opacity-50">SPONSORED AD</span>
-            <button onclick="closeAd()" class="text-xs bg-red-500 text-white px-3 py-1 rounded-full font-bold">Cancel</button>
-        </div>
-        <a href="https://google.com" target="_blank">
-            <img src="https://via.placeholder.com/350x250?text=Your+Ad+Here" alt="Advertisement" class="ad-img">
-        </a>
-        <div class="p-3 text-center">
-            <p class="text-xs font-bold mb-2">ئەمە ڕیکلامی دەستپێکە - بۆ سپۆنسەر پەیوەندی بکەن</p>
-            <button onclick="window.open('https://google.com', '_blank')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-bold">Learn More</button>
-        </div>
-    </div>
-</div>
-
 <div id="msgModal" class="hidden fixed inset-0 bg-black/70 z-[1000] flex items-center justify-center p-4">
     <div class="custom-alert">
         <i id="msgIcon" class="fas fa-exclamation-circle text-4xl mb-3 text-red-500"></i>
@@ -88,7 +67,7 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
-            <div class="relative cursor-pointer" onclick="showPage('notif-page')">
+            <div class="relative cursor-pointer" onclick="window.handleNotifClick()">
                 <i id="notif-bell" class="far fa-bell text-[#ffd700] text-xl"></i>
                 <div id="notif-dot" class="notification-dot"></div>
             </div>
@@ -110,12 +89,17 @@
         <main id="org-page" class="page"><div id="org-list" class="space-y-4"></div></main>
         
         <main id="notif-page" class="page">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-bold lang-nav" data-key="notifTitle">Notifications</h2>
-                <button onclick="window.toggleNotifStatus()" class="text-xs flex items-center gap-1 bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                    <span id="notif-status-text">ON</span>
-                    <i id="notif-toggle-icon" class="fas fa-bell"></i>
-                </button>
+            <div class="flex flex-col items-center mb-6">
+                <div class="flex justify-between w-full items-center mb-4">
+                    <h2 class="font-bold lang-nav" data-key="notifTitle">Notifications</h2>
+                    <button onclick="window.toggleNotifStatus()" class="text-xs flex items-center gap-1 bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                        <span id="notif-status-text">ON</span>
+                        <i id="notif-toggle-icon" class="fas fa-bell"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-center font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl lang-nav" data-key="notifEnergy">
+                    If you are bored or tired, visit here every day to get some energy for your day!
+                </p>
             </div>
             <div id="notif-list" class="space-y-4"></div>
         </main>
@@ -235,14 +219,14 @@
     let currentLang = localStorage.getItem('userLang') || 'en';
     let currentUserData = null;
     window.allUsers = [];
-    let isFirstLoad = true;
     let appStartTime = Date.now();
+    let processedNotifs = new Set(); 
 
     const langData = {
-        en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification" },
-        ku: { news: "هەواڵ", info: "زانیاری", muslim: "مسوڵمان", org: "ڕێکخراو", acc: "ئەکاونت", error: "هەڵەیەک ڕوویدا", heartMsg: "تۆ دڵی منت شکاند، ئەگەر ئەتەوێت چاکی کەیتەوە و دڵخۆشم بکەیت ئەکاونت دروستبکە!", favTitle: "دڵخوازەکان", emptyFav: "هیچ لێرە نییە", phUser: "ناوی بەکارهێنەر", phEmail: "ئیمەیڵ", phPass: "وشەی تێپەڕ", loginBtn: "چوونەژوورەوە", regBtn: "تۆمارکردن", okBtn: "باشە", logout: "چوونە دەرەوە", tabPost: "پۆست", tabDash: "داشبۆرد", publish: "بڵاوکردنەوە", totalAcc: "ئەکاونتەکان", online: "ئۆنڵاین", fillAll: "خانەکان پڕبکەرەوە", tabNotif: "نۆتیفیکەیشن", notifTitle: "ئاگادارییەکان", newNotif: "ئاگادارییەکی نوێ" },
-        ar: { news: "أخبار", info: "معلومات", muslim: "مسلم", org: "منظمات", acc: "حساب", error: "خطأ، حاول مجدداً", heartMsg: "لقد كسرت قلبي! إذا كنت تريد إصلاحه وإسعادي، يرجى إنشاء حساب.", favTitle: "المفضلة", emptyFav: "لا يوجد شيء", phUser: "المستخدم", phEmail: "الايميل", phPass: "كلمة السر", loginBtn: "دخول", regBtn: "تسجيل", okBtn: "حسناً", logout: "خروج", tabPost: "نشر", tabDash: "لوحة التحكم", publish: "نشر", totalAcc: "الحسابات", online: "متصل", fillAll: "املأ الحقول", tabNotif: "إشعار", notifTitle: "الإشعارات", newNotif: "إشعار جديد" },
-        fa: { news: "اخبار", info: "اطلاعات", muslim: "مسلمان", org: "سازمان", acc: "حساب", error: "خطا، دوباره تلاش کنید", heartMsg: "تو قلب مرا شکستی! اگر می‌خواهی آن را ترمیم کنی و مرا خوشحال کنی، لطفاً یک حساب کاربری بساز.", favTitle: "علاقه‌مندی‌ها", emptyFav: "چیزی نیست", phUser: "نام کاربری", phEmail: "ایمیل", phPass: "رمز عبور", loginBtn: "ورود", regBtn: "ثبت نام", okBtn: "باشه", logout: "خروج", tabPost: "پست", tabDash: "داشبورد", publish: "انتشار", totalAcc: "حساب‌ها", online: "آنلاین", fillAll: "فیلدها را پر کنید", tabNotif: "اعلان", notifTitle: "اعلان‌ها", newNotif: "اعلان جدید" }
+        en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification", notifPromo: "If you want to get notifications and good energy, please create an account for joyful notifications!", notifEnergy: "If you are bored or tired, visit here every day to get some energy for your day!" },
+        ku: { news: "هەواڵ", info: "زانیاری", muslim: "مسوڵمان", org: "ڕێکخراو", acc: "ئەکاونت", error: "هەڵەیەک ڕوویدا", heartMsg: "تۆ دڵی منت شکاند، ئەگەر ئەتەوێت چاکی کەیتەوە و دڵخۆشم بکەیت ئەکاونت دروستبکە!", favTitle: "دڵخوازەکان", emptyFav: "هیچ لێرە نییە", phUser: "ناوی بەکارهێنەر", phEmail: "ئیمەیڵ", phPass: "وشەی تێپەڕ", loginBtn: "چوونەژوورەوە", regBtn: "تۆمارکردن", okBtn: "باشە", logout: "چوونە دەرەوە", tabPost: "پۆست", tabDash: "داشبۆرد", publish: "بڵاوکردنەوە", totalAcc: "ئەکاونتەکان", online: "ئۆنڵاین", fillAll: "خانەکان پڕبکەرەوە", tabNotif: "نۆتیفیکەیشن", notifTitle: "ئاگادارییەکان", newNotif: "ئاگادارییەکی نوێ", notifPromo: "ئەگەر ئەتەوێت نۆتیفیکەیشن و ئینێرجی باش وەر بگریت ئەکاونت دروست بکە بۆ بینینی نۆتیفیکەیشنی دڵخۆشکەر!", notifEnergy: "ئەگەر بێتاقەتی، بێزاری هەموو ڕۆژێک سەردانی ئێرە بکە بۆ ئەوەی کەمێک ئینێرجی وەر بگری بۆ ڕۆژەکەت!" },
+        ar: { news: "أخبار", info: "معلومات", muslim: "مسلم", org: "منظمات", acc: "حساب", error: "خطأ، حاول مجدداً", heartMsg: "لقد كسرت قلبي! إذا كنت تريد إصلاحه وإسعادي، يرجى إنشاء حساب.", favTitle: "المفضلة", emptyFav: "لا يوجد شيء", phUser: "المستخدم", phEmail: "الايميل", phPass: "كلمة السر", loginBtn: "دخول", regBtn: "تسجيل", okBtn: "حسناً", logout: "خروج", tabPost: "نشر", tabDash: "لوحة التحكم", publish: "نشر", totalAcc: "الحسابات", online: "متصل", fillAll: "املأ الحقول", tabNotif: "إشعار", notifTitle: "الإشعارات", newNotif: "إشعار جديد", notifPromo: "إذا كنت ترغب في تلقي الإشعارات والطاقة الجيدة، يرجى إنشاء حساب لمشاهدة الإشعارات السعيدة!", notifEnergy: "إذا كنت تشعر بالملل أو التعب، قم بزيارة هنا كل يوم للحصول على بعض الطاقة ليومك!" },
+        fa: { news: "اخبار", info: "اطلاعات", muslim: "مسلمان", org: "سازمان", acc: "حساب", error: "خطا، دوباره تلاش کنید", heartMsg: "تو قلب مرا شکستی! اگر می‌خواهی آن را ترمیم کنی و مرا خوشحال کنی، لطفاً یک حساب کاربری بساز.", favTitle: "علاقه‌مندی‌ها", emptyFav: "چیزی نیست", phUser: "نام کاربری", phEmail: "ایمیل", phPass: "رمز عبور", loginBtn: "ورود", regBtn: "ثبت نام", okBtn: "باشه", logout: "خروج", tabPost: "پست", tabDash: "داشبورد", publish: "انتشار", totalAcc: "حساب‌ها", online: "آنلاین", fillAll: "فیلدها را پر کنید", tabNotif: "اعلان", notifTitle: "اعلان‌ها", newNotif: "اعلان جدید", notifPromo: "اگر می‌خواهید اعلان‌ها و انرژی خوب دریافت کنید، لطفاً برای دیدن اعلان‌های شاد یک حساب کاربری بسازید!", notifEnergy: "اگر بی‌حوصله یا خسته هستید، هر روز از اینجا دیدن کنید تا برای روزتان انرژی بگیرید!" }
     };
 
     window.showAlert = (text, icon = "fa-exclamation-circle") => {
@@ -304,8 +288,16 @@
         }
     });
 
+    window.handleNotifClick = () => {
+        if (!auth.currentUser) {
+            showAlert(langData[currentLang].notifPromo, "fa-bell");
+        } else {
+            showPage('notif-page');
+        }
+    };
+
     window.toggleNotifStatus = async () => {
-        if (!auth.currentUser) return showAlert(langData[currentLang].heartMsg);
+        if (!auth.currentUser) return showAlert(langData[currentLang].notifPromo);
         const newState = !currentUserData.notifEnabled;
         await updateDoc(doc(db, "users", auth.currentUser.email), { notifEnabled: newState });
         currentUserData.notifEnabled = newState;
@@ -503,6 +495,11 @@
     }
 
     function loadNotifications() {
+        if (!auth.currentUser) {
+            document.getElementById('notif-list').innerHTML = `<div class="text-center py-10 opacity-50">${langData[currentLang].notifPromo}</div>`;
+            return;
+        }
+
         const list = document.getElementById('notif-list');
         const dot = document.getElementById('notif-dot');
         const q = query(collection(db, "notifications"), where("lang", "==", currentLang), orderBy("time", "desc"));
@@ -516,9 +513,10 @@
             snap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const n = change.doc.data();
-                    // تەنها ئەگەر زمانەکە هەمان زمانی بەکارهێنەر بێت و پاش کاتی دەستپێکردنی ئەپەکە بێت
-                    if (n.lang === currentLang && n.time > appStartTime) {
-                        if (!currentUserData || currentUserData.notifEnabled) {
+                    const notifId = change.doc.id;
+                    if (n.lang === currentLang && n.time > appStartTime && !processedNotifs.has(notifId)) {
+                        if (currentUserData && currentUserData.notifEnabled) {
+                            processedNotifs.add(notifId);
                             notifQueue.push(n.text);
                             processNotifQueue();
                         }
@@ -605,18 +603,7 @@
 </script>
 
 <script>
-    function showAd() {
-        document.getElementById('adModal').classList.remove('hidden');
-    }
-    function closeAd() {
-        document.getElementById('adModal').classList.add('hidden');
-    }
-    window.addEventListener('load', () => {
-        setTimeout(showAd, 2000);
-    });
     function showPage(id, btn) {
-        if(id !== 'home-page' && id !== 'notif-page') showAd();
-        
         if(id === 'notif-page' && window.triggerMarkRead) {
             window.triggerMarkRead();
         }
