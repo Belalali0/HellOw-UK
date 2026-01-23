@@ -682,7 +682,9 @@
     };
 
     function loadPosts() {
-        onSnapshot(collection(db, "posts"), (snap) => {
+        // تازەترین پۆست لە سەرەوە دێت بەهۆی orderBy("time", "desc")
+        const q = query(collection(db, "posts"), orderBy("time", "desc"));
+        onSnapshot(q, (snap) => {
             const containers = { 
                 home: 'post-list', org: 'org-list', 'info-college': 'info-college-list', 'info-organization': 'info-organization-list',
                 'info-jobs': 'info-jobs-list', 'market-car': 'market-car-list', 'market-business': 'market-business-list', 'market-house': 'market-house-list'
@@ -719,7 +721,6 @@
         });
     }
 
-    // --- لێرە گۆڕانکاری کراوە بۆ ئەوەی زمانەکان ئۆتۆماتیکی بشاردرێنەوە ---
     function updateLangVisibility(langCounts) {
         const select = document.getElementById('langSelect');
         const wrapper = document.getElementById('langWrapper');
@@ -738,14 +739,12 @@
             }
         });
 
-        // ئەگەر هیچ زمانێک پۆستی تیا نەبوو یان تەنها یەک دانە بوو، لیستی گۆڕینی زمان بشارەوە
         if (activeLangs.length <= 1) {
             wrapper.style.display = 'none';
         } else {
             wrapper.style.display = 'flex';
         }
 
-        // ئەگەر ئەو زمانەی ئێستا هەڵبژێردراوە پۆستی تیا نەبوو، بیگۆڕە بۆ یەکێک کە پۆستی تیا بێت
         if (!activeLangs.includes(currentLang) && activeLangs.length > 0) {
             window.changeLanguage(activeLangs[0]);
         }
@@ -847,6 +846,7 @@
         const list = document.getElementById('notif-list');
         const dot = document.getElementById('notif-dot');
         const favNotifList = document.getElementById('fav-notif-list');
+        // تازەترین ئاگاداری لە سەرەوە دێت بەهۆی orderBy("time", "desc")
         const q = query(collection(db, "notifications"), where("lang", "==", currentLang), orderBy("time", "desc"));
         onSnapshot(q, (snap) => {
             if(list) list.innerHTML = "";
