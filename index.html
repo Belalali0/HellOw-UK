@@ -2,27 +2,111 @@
 <html lang="en" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HellOw UK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hellow UK</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Poppins:wght@900&display=swap');
-        :root { --bg-main: #f1f5f9; --bg-card: #ffffff; --text-main: #1e293b; --text-sub: #475569; --border: #e2e8f0; --accent: #ffd700; }
-        .dark { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #f1f5f9; --text-sub: #cbd5e1; --border: #334155; --accent: #ffd700; }
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&family=Righteous&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
         
-        body { font-family: 'Noto Sans Arabic', 'Poppins', sans-serif; background-color: var(--bg-main); color: var(--text-main); transition: 0.3s; margin: 0; overflow-x: hidden; direction: rtl !important; text-align: right !important; }
+        :root { 
+            --bg-main: #f8fafc; 
+            --bg-card: #ffffff; 
+            --text-main: #1e293b; 
+            --text-sub: #64748b; 
+            --border: #e2e8f0; 
+            --accent: #ffd700; 
+            --llw-color: #94a3b8; 
+        }
+        .dark { 
+            --bg-main: #0f172a; 
+            --bg-card: #1e293b; 
+            --text-main: #f1f5f9; 
+            --text-sub: #94a3b8; 
+            --border: #334155; 
+            --accent: #ffd700; 
+            --llw-color: #ffffff; 
+        }
+        
+        body { 
+            font-family: 'Vazirmatn', sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            transition: 0.3s; 
+            margin: 0; 
+            overflow-x: hidden; 
+            direction: rtl !important; 
+            text-align: right !important;
+            overscroll-behavior-y: none;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            font-family: 'Righteous', cursive;
+            font-size: 1.8rem;
+            cursor: pointer;
+            gap: 0px;
+            direction: ltr !important;
+            letter-spacing: -1px;
+        }
+        .brand-h, .brand-e { color: #ff5555; font-weight: 800; }
+        .brand-ll, .brand-w { color: var(--llw-color); font-weight: 400; transition: color 0.3s; }
+        .brand-uk { color: #4ade80; font-weight: 800; margin-left: 4px; }
+        
+        .sun-o-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1px;
+            margin-top: -2px;
+        }
+        
+        .sun-icon {
+            color: #ffd700;
+            font-size: 1.1rem;
+            animation: spin-sun 6s linear infinite;
+        }
+
+        @keyframes spin-sun {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .lang-wrapper {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2px 8px;
+            display: flex;
+            align-items: center;
+        }
+        #langSelect {
+            background: transparent;
+            font-weight: 700;
+            font-size: 11px;
+            outline: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+            appearance: none;
+            padding: 2px 4px;
+        }
+
         .mobile-shell { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-card); position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
         .nav-bottom { position: fixed; bottom: 0; max-width: 480px; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
         .active-page { display: block; }
         .active-nav { color: var(--accent) !important; }
-        .input-field { width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; outline: none; color: var(--text-main); margin-bottom: 10px; text-align: right; }
+        
+        .input-field { width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; outline: none; color: var(--text-main); margin-bottom: 10px; text-align: right; font-size: 13px; transition: none; }
+        
         .custom-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: var(--bg-card); padding: 20px; border-radius: 20px; border: 2px solid #ff5555; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .like-btn.active { color: #ff5555 !important; }
         .notification-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: red; border-radius: 50%; display: none; }
-        
+
         .notif-popup {
             position: fixed; top: -150px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 400px; background: #ffd700; color: #000;
@@ -33,15 +117,39 @@
         }
         .notif-popup.show { top: 20px; opacity: 1; pointer-events: auto; }
 
-        /* Styles for Favorite Folders */
-        .fav-tab-btn { flex: 1; padding: 12px; font-weight: bold; font-size: 13px; transition: 0.3s; border-radius: 12px; border: 1px solid transparent; color: var(--text-sub); }
-        .fav-tab-btn.active { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
-        .dark .fav-tab-btn.active { background: #7f1d1d; color: #fecaca; border-color: #991b1b; }
+        .tab-container-bg {
+            background-color: var(--bg-card) !important;
+            border: 1px solid var(--border);
+            display: flex;
+        }
+        
+        .fav-tab-btn, .info-tab-btn, .market-tab-btn { 
+            flex: 1; 
+            padding: 10px 5px; 
+            font-weight: bold; 
+            font-size: 11px; 
+            transition: 0.3s; 
+            border-radius: 12px; 
+            border: 1px solid transparent; 
+            color: var(--text-sub); 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+        }
 
-        /* Fix for Post visibility */
-        .post-card { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); }
-        .post-title { color: var(--text-main); }
-        .post-desc { color: var(--text-sub); }
+        .fav-tab-btn.active, .info-tab-btn.active, .market-tab-btn.active { 
+            background: #ef4444 !important; 
+            color: white !important; 
+            border-color: #ef4444; 
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+            display: flex; 
+        }
+
+        .post-card { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); border-radius: 20px; overflow: hidden; }
+        .comments-section { border-top: 1px solid var(--border); margin-top: 15px; padding-top: 10px; display: none; overflow: hidden; }
+        .comment-item { font-size: 12px; margin-bottom: 8px; background: var(--bg-main); padding: 8px; border-radius: 10px; }
+        .reply-item { margin-right: 20px; border-right: 2px solid var(--accent); padding-right: 8px; margin-top: 5px; background: rgba(0,0,0,0.02); }
     </style>
 </head>
 <body class="light">
@@ -69,33 +177,77 @@
 
 <div class="mobile-shell pb-24">
     <header class="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border)] p-4 flex justify-between items-center z-50">
-        <div class="flex items-center gap-2 cursor-pointer" onclick="window.handleAdminTrigger()">
-            <i class="fas fa-book-open text-2xl text-[var(--accent)]"></i>
-            <div class="brand-text text-xl font-black italic">
-                <span class="text-[#ff5555]">He</span><span class="text-slate-400">ll</span><span class="text-[#ffd700]">O</span><span class="text-slate-400">w</span> <span class="text-green-400">UK</span>
-                <div id="lang-indicator" class="text-[9px] font-bold text-gray-400 uppercase tracking-[3px]">EN</div>
+        <div class="brand-container" onclick="window.handleAdminTrigger()">
+            <span class="brand-h">H</span><span class="brand-e">e</span><span class="brand-ll">ll</span>
+            <div class="sun-o-container">
+                <i class="fas fa-sun sun-icon"></i>
             </div>
+            <span class="brand-w">w</span>
+            <span class="brand-uk">UK</span>
         </div>
-        <div class="flex items-center gap-4">
+        
+        <div class="flex items-center gap-3">
             <div class="relative cursor-pointer" onclick="window.handleNotifClick()">
-                <i id="notif-bell" class="far fa-bell text-[#ffd700] text-xl"></i>
+                <i id="notif-bell" class="far fa-bell text-[#ffd700] text-lg"></i>
                 <div id="notif-dot" class="notification-dot"></div>
             </div>
-            <i id="header-heart" onclick="window.checkHeartStatus()" class="fas fa-heart-broken text-gray-400 text-xl cursor-pointer"></i>
-            <i id="theme-icon" onclick="toggleTheme()" class="fas fa-moon text-xl cursor-pointer"></i>
-            <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-transparent font-bold text-xs outline-none text-[var(--text-main)]">
-                <option value="en">EN</option>
-                <option value="ku">KU</option>
-                <option value="ar">AR</option>
-                <option value="fa">FA</option>
-            </select>
+            <i id="header-heart" onclick="window.checkHeartStatus()" class="fas fa-heart-broken text-gray-400 text-lg cursor-pointer"></i>
+            <i id="theme-icon" onclick="toggleTheme()" class="fas fa-moon text-lg cursor-pointer"></i>
+            <div id="langWrapper" class="lang-wrapper">
+                <i class="fas fa-globe text-[10px] opacity-40 ml-1"></i>
+                <select id="langSelect" onchange="changeLanguage(this.value)">
+                    <option value="en">EN</option>
+                    <option value="ku">KU</option>
+                    <option value="ar">AR</option>
+                    <option value="fa">FA</option>
+                </select>
+            </div>
         </div>
     </header>
 
     <div id="pages">
         <main id="home-page" class="page active-page"><div id="post-list" class="space-y-4"></div></main>
-        <main id="info-page" class="page"><div id="info-list" class="space-y-4"></div></main>
-        <main id="muslim-page" class="page"><div id="muslim-list" class="space-y-4"></div></main>
+        
+        <main id="info-page" class="page">
+            <div class="flex gap-1 p-1 tab-container-bg rounded-2xl mb-6">
+                <button onclick="switchInfoTab('college')" id="btn-info-college" class="info-tab-btn">
+                    <i class="fas fa-university"></i>
+                    <span class="lang-nav" data-key="college">College</span>
+                </button>
+                <button onclick="switchInfoTab('organization')" id="btn-info-organization" class="info-tab-btn">
+                    <i class="fas fa-hands-helping"></i>
+                    <span class="lang-nav" data-key="organization">Organization</span>
+                </button>
+                <button onclick="switchInfoTab('jobs')" id="btn-info-jobs" class="info-tab-btn">
+                    <i class="fas fa-briefcase"></i>
+                    <span class="lang-nav" data-key="jobs">Jobs</span>
+                </button>
+            </div>
+            <div id="info-college-list" class="space-y-4"></div>
+            <div id="info-organization-list" class="space-y-4 hidden"></div>
+            <div id="info-jobs-list" class="space-y-4 hidden"></div>
+        </main>
+
+        <main id="market-page" class="page">
+            <div class="flex gap-1 p-1 tab-container-bg rounded-2xl mb-6">
+                <button onclick="switchMarketTab('car')" id="btn-market-car" class="market-tab-btn">
+                    <i class="fas fa-car"></i>
+                    <span class="lang-nav" data-key="car">Car</span>
+                </button>
+                <button onclick="switchMarketTab('business')" id="btn-market-business" class="market-tab-btn">
+                    <i class="fas fa-store"></i>
+                    <span class="lang-nav" data-key="business">Business</span>
+                </button>
+                <button onclick="switchMarketTab('house')" id="btn-market-house" class="market-tab-btn">
+                    <i class="fas fa-home"></i>
+                    <span class="lang-nav" data-key="house">House</span>
+                </button>
+            </div>
+            <div id="market-car-list" class="space-y-4"></div>
+            <div id="market-business-list" class="space-y-4 hidden"></div>
+            <div id="market-house-list" class="space-y-4 hidden"></div>
+        </main>
+
         <main id="org-page" class="page"><div id="org-list" class="space-y-4"></div></main>
         
         <main id="notif-page" class="page">
@@ -116,25 +268,18 @@
 
         <main id="fav-page" class="page">
             <h2 class="text-center font-black mb-6 lang-nav text-xl text-red-500" data-key="favTitle">Favorites</h2>
-            
-            <div class="flex gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-2xl mb-6">
-                <button onclick="switchFavTab('posts')" id="btn-fav-posts" class="fav-tab-btn active flex items-center justify-center gap-2">
+            <div class="flex gap-2 p-1 tab-container-bg rounded-2xl mb-6">
+                <button onclick="switchFavTab('posts')" id="btn-fav-posts" class="fav-tab-btn active" style="display: flex;">
                     <i class="fas fa-newspaper"></i>
                     <span class="lang-nav" data-key="favPosts">Posts</span>
                 </button>
-                <button onclick="switchFavTab('notifs')" id="btn-fav-notifs" class="fav-tab-btn flex items-center justify-center gap-2">
+                <button onclick="switchFavTab('notifs')" id="btn-fav-notifs" class="fav-tab-btn" style="display: flex;">
                     <i class="fas fa-bullhorn"></i>
                     <span class="lang-nav" data-key="favNotifs">Alerts</span>
                 </button>
             </div>
-
-            <div id="fav-posts-folder" class="space-y-4">
-                <div id="fav-post-list" class="space-y-4"></div>
-            </div>
-
-            <div id="fav-notifs-folder" class="hidden space-y-4">
-                <div id="fav-notif-list" class="space-y-3"></div>
-            </div>
+            <div id="fav-posts-folder" class="space-y-4"><div id="fav-post-list" class="space-y-4"></div></div>
+            <div id="fav-notifs-folder" class="hidden space-y-4"><div id="fav-notif-list" class="space-y-3"></div></div>
         </main>
 
         <main id="account-page" class="page">
@@ -178,7 +323,32 @@
                 </div>
                 <div class="flex gap-2 mb-4 text-xs font-bold">
                     <select id="p-lang" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-[var(--text-main)]"><option value="en">English</option><option value="ku" selected>Kurdî</option><option value="ar">عربي</option><option value="fa">فارسی</option></select>
-                    <select id="p-cat" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-[var(--text-main)]"><option value="home">News</option><option value="info">Info</option><option value="muslim">Muslim</option><option value="org">Org</option></select>
+                    <select id="p-cat" onchange="toggleAdminSubFields(this.value)" class="flex-1 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-[var(--text-main)]">
+                        <option value="home">News</option>
+                        <option value="info">Info</option>
+                        <option value="market">Buy & Sell</option>
+                        <option value="org">Discount</option>
+                    </select>
+                </div>
+
+                <div id="info-subcat-container" class="hidden mb-4">
+                    <label class="block text-[10px] font-bold mb-1 opacity-60 text-[var(--text-main)]">Type:</label>
+                    <select id="p-subcat" onchange="toggleExpiryField(this.value)" class="w-full p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-xs font-bold text-[var(--text-main)]">
+                        </select>
+                </div>
+
+                <div id="expiry-container" class="hidden mb-4">
+                    <label class="block text-[10px] font-bold mb-1 opacity-60 text-[var(--text-main)]">Delete After:</label>
+                    <select id="p-expiry" class="w-full p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border)] text-xs font-bold text-[var(--text-main)]">
+                        <option value="0">Never</option>
+                        <option value="1">1 Day</option>
+                        <option value="3">3 Days</option>
+                        <option value="7">7 Days</option>
+                        <option value="15">15 Days</option>
+                        <option value="30">30 Days (1 Month)</option>
+                        <option value="60">60 Days (2 Months)</option>
+                        <option value="90">90 Days (3 Months)</option>
+                    </select>
                 </div>
                 <button id="publish-btn" onclick="window.submitPost()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-600/20 lang-nav" data-key="publish">Publish</button>
             </div>
@@ -207,17 +377,17 @@
     </div>
 
     <nav class="nav-bottom">
-        <button onclick="showPage('home-page', this)" class="nav-item active-nav flex flex-col items-center">
+        <button onclick="showPage('home-page', this)" id="nav-btn-home" class="nav-item active-nav flex flex-col items-center">
             <i class="fas fa-home"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="news">News</span>
         </button>
-        <button onclick="showPage('info-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
+        <button onclick="showPage('info-page', this)" id="nav-btn-info" class="nav-item text-gray-400 flex flex-col items-center hidden">
             <i class="fas fa-info-circle"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="info">Info</span>
         </button>
-        <button onclick="showPage('muslim-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
-            <i class="fas fa-mosque"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="muslim">Muslim</span>
+        <button onclick="showPage('market-page', this)" id="nav-btn-market" class="nav-item text-gray-400 flex flex-col items-center hidden">
+            <i class="fas fa-shopping-cart"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="market">Market</span>
         </button>
-        <button onclick="showPage('org-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
-            <i class="fas fa-hands-helping"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="org">Org</span>
+        <button onclick="showPage('org-page', this)" id="nav-btn-org" class="nav-item text-gray-400 flex flex-col items-center hidden">
+            <i class="fas fa-tag"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="org">Discount</span>
         </button>
         <button onclick="showPage('account-page', this)" class="nav-item text-gray-400 flex flex-col items-center">
             <i class="fas fa-user-circle"></i><span class="text-[9px] mt-1 font-bold lang-nav" data-key="acc">Account</span>
@@ -252,10 +422,10 @@
     let processedNotifs = new Set(); 
 
     const langData = {
-        en: { news: "News", info: "Info", muslim: "Muslim", org: "Org", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", favNotifs: "Alerts", favPosts: "Posts", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification", notifPromo: "If you want to get notifications and good energy, please create an account for joyful notifications!", notifEnergy: "If you are bored or tired, visit here every day to get some energy for your day!" },
-        ku: { news: "هەواڵ", info: "زانیاری", muslim: "مسوڵمان", org: "ڕێکخراو", acc: "ئەکاونت", error: "هەڵەیەک ڕوویدا", heartMsg: "تۆ دڵی منت شکاند، ئەگەر ئەتەوێت چاکی کەیتەوە و دڵخۆشم بکەیت ئەکاونت دروستبکە!", favTitle: "دڵخوازەکان", favNotifs: "ئاگادارییەکان", favPosts: "پۆستەکان", emptyFav: "هیچ لێرە نییە", phUser: "ناوی بەکارهێنەر", phEmail: "ئیمەیڵ", phPass: "وشەی تێپەڕ", loginBtn: "چوونەژوورەوە", regBtn: "تۆمارکردن", okBtn: "باشە", logout: "چوونە دەرەوە", tabPost: "پۆست", tabDash: "داشبۆرد", publish: "بڵاوکردنەوە", totalAcc: "ئەکاونتەکان", online: "ئۆنڵاین", fillAll: "خانەکان پڕبکەرەوە", tabNotif: "نۆتیفیکەیشن", notifTitle: "ئاگادارییەکان", newNotif: "ئاگادارییەکی نوێ", notifPromo: "ئەگەر ئەتەوێت نۆتیفیکەیشن و ئینێرجی باش وەر بگریت ئەکاونت دروست بکە بۆ بینینی نۆتیفیکەیشنی دڵخۆشکەر!", notifEnergy: "ئەگەر بێتاقەتی، بێزاری هەموو ڕۆژێک سەردانی ئێرە بکە بۆ ئەوەی کەمێک ئینێرجی وەر بگری بۆ ڕۆژەکەت!" },
-        ar: { news: "أخبار", info: "معلومات", muslim: "مسلم", org: "منظمات", acc: "حساب", error: "خطأ، حاول مجدداً", heartMsg: "لقد كسرت قلبي! إذا كنت تريد إصلاحه وإسعادي، يرجى إنشاء حساب.", favTitle: "المفضلة", favNotifs: "الإشعارات", favPosts: "المنشورات", emptyFav: "لا يوجد شيء", phUser: "المستخدم", phEmail: "الايميل", phPass: "كلمة السر", loginBtn: "دخول", regBtn: "تسجيل", okBtn: "حسناً", logout: "خروج", tabPost: "نشر", tabDash: "لوحة التحكم", publish: "نشر", totalAcc: "الحسابات", online: "متصل", fillAll: "املأ الحقول", tabNotif: "إشعار", notifTitle: "الإشعارات", newNotif: "إشعار جديد", notifPromo: "إذا كنت ترغب في تلقي الإشعارات والطاقة الجيدة، يرجى إنشاء حساب لمشاهدة الإشعارات السعيدة!", notifEnergy: "إذا كنت تشعر بالملل أو التعب، قم بزيارة هنا كل يوم للحصول على بعض الطاقة ليومك!" },
-        fa: { news: "اخبار", info: "اطلاعات", muslim: "مسلمان", org: "سازمان", acc: "حساب", error: "خطا، دوباره تلاش کنید", heartMsg: "تو قلب مرا شکستی! اگر می‌خواهی آن را ترمیم کنی و مرا خوشحال کنی، لطفاً یک حساب کاربری بساز.", favTitle: "علاقه‌مندی‌ها", favNotifs: "اعلان‌ها", favPosts: "پست‌ها", emptyFav: "چیزی نیست", phUser: "نام کاربری", phEmail: "ایمیل", phPass: "رمز عبور", loginBtn: "ورود", regBtn: "ثبت نام", okBtn: "باشه", logout: "خروج", tabPost: "پست", tabDash: "داشبورد", publish: "انتشار", totalAcc: "حساب‌ها", online: "آنلاین", fillAll: "فیلدها را پر کنید", tabNotif: "اعلان", notifTitle: "اعلان‌ها", newNotif: "اعلان جدید", notifPromo: "اگر می‌خواهید اعلان‌ها و انرژی خوب دریافت کنید، لطفاً برای دیدن اعلان‌های شاد یک حساب کاربری بسازید!", notifEnergy: "اگر بی‌حوصله یا خسته هستید، هر روز از اینجا دیدن کنید تا برای روزتان انرژی بگیرید!" }
+        en: { news: "News", info: "Info", market: "Buy & Sell", car: "Car", business: "Business", house: "House", org: "Discount", acc: "Account", error: "Error, try again", heartMsg: "You broke my heart! If you want to fix it and make me happy, please create an account.", favTitle: "Favorites", favNotifs: "Alerts", favPosts: "Posts", emptyFav: "Nothing yet", phUser: "Username", phEmail: "Email", phPass: "Password", loginBtn: "Login", regBtn: "Register", okBtn: "OK", logout: "Log Out", tabPost: "Post", tabDash: "Dashboard", publish: "Publish", totalAcc: "Total Accounts", online: "Online", fillAll: "Fill all fields", tabNotif: "Alert", notifTitle: "Notifications", newNotif: "New Notification", notifPromo: "If you want to get notifications and good energy, please create an account for joyful notifications!", notifEnergy: "If you are bored or tired, visit here every day to get some energy for your day!", college: "College", organization: "Organization", jobs: "Jobs", commentError: "Sorry, you must create an account to comment!", commentPlaceholder: "Write a comment...", replyPlaceholder: "Write a reply..." },
+        ku: { news: "هەواڵ", info: "زانیاری", market: "کڕین و فرۆشتن", car: "سەیارە", business: "بزنس", house: "خانوو", org: "دیسکاونت", acc: "ئەکاونت", error: "هەڵەیەک ڕوویدا", heartMsg: "تۆ دڵی منت شکاند، ئەگەر ئەتەوێت چاکی کەیتەوە و دڵخۆشم بکەیت ئەکاونت دروستبکە!", favTitle: "دڵخوازەکان", favNotifs: "ئاگادارییەکان", favPosts: "پۆستەکان", emptyFav: "هیچ لێرە نییە", phUser: "ناوی بەکارهێنەر", phEmail: "ئیمەیڵ", phPass: "وشەی تێپەڕ", loginBtn: "چوونەژوورەوە", regBtn: "تۆمارکردن", okBtn: "باشە", logout: "چوونە دەرەوە", tabPost: "پۆست", tabDash: "داشبۆرد", publish: "بڵاوکردنەوە", totalAcc: "ئەکاونتەکان", online: "ئۆنڵاین", fillAll: "خانەکان پڕبکەرەوە", tabNotif: "نۆتیفیکەیشن", notifTitle: "ئاگادارییەکان", newNotif: "ئاگادارییەکی نوێ", notifPromo: "ئەگەر ئەتەوێت نۆتیفیکەیشن و ئینێرجی باش وەر بگریت ئەکاونت دروست بکە بۆ بینینی نۆتیفیکەیشنی دڵخۆشکەر!", notifEnergy: "ئەگەر بێتاقەتی، بێزاری هەموو ڕۆژێک سەردانی ئێرە بکە بۆ ئەوەی کەمێک ئینێرجی وەر بگری بۆ ڕۆژەکەت!", college: "کۆلێژ", organization: "ڕێکخراو", jobs: "هەلیکار", commentError: "ببورە بۆ ئەوەی بتوانی کۆمێنت بکەیت ئەبێت ئەکاونت درووست بکەیت", commentPlaceholder: "کۆمێنت بنووسە...", replyPlaceholder: "وەڵام بنووسە..." },
+        ar: { news: "أخبار", info: "معلومات", market: "البيع والشراء", car: "سيارة", business: "عمل", house: "منزل", org: "تخفيضات", acc: "حساب", error: "خطأ، حاول مجدداً", heartMsg: "لقد كسرت قلبي! إذا كنت تريد إصلاحه وإسعادي، يرجى إنشاء حساب.", favTitle: "المفضلة", favNotifs: "الإشعارات", favPosts: "المنشورات", emptyFav: "لا يوجد شيء", phUser: "المستخدم", phEmail: "الايميل", phPass: "كلمة السر", loginBtn: "دخول", regBtn: "تسجيل", okBtn: "حسناً", logout: "خروج", tabPost: "نشر", tabDash: "لوحة التحكم", publish: "نشر", totalAcc: "الحسابات", online: "متصل", fillAll: "املأ الحقول", tabNotif: "إشعار", notifTitle: "الإشعارات", newNotif: "إشعار جديد", notifPromo: "إذا كنت ترغب في تلقي الإشعارات والطاقة الجيدة، يرجى إنشاء حساب لمشاهدة الإشعارات السعيدة!", notifEnergy: "إذا كنت تشعر بالملل أو التعب، قم بزيارة هنا كل يوم للحصول على بعض الطاقة ليومك!", college: "كلية", organization: "منظمة", jobs: "فرص عمل", commentError: "عذراً، يجب عليك إنشاء حساب لتتمكن من التعليق!", commentPlaceholder: "اكتب تعليقاً...", replyPlaceholder: "اكتب رداً..." },
+        fa: { news: "اخبار", info: "اطلاعات", market: "خرید و فروش", car: "ماشین", business: "کسب و کار", house: "خانه", org: "تخفیف", acc: "حساب", error: "خطا، دوباره تلاش کنید", heartMsg: "تو قلب مرا شکستی! اگر می‌خواهی آن را ترمیم کنی و مرا خوشحال کنی، لطفاً یک حساب کاربری بساز.", favTitle: "علاقه‌مندی‌ها", favNotifs: "اعلان‌ها", favPosts: "پست‌ها", emptyFav: "چیزی نیست", phUser: "نام کاربری", phEmail: "ایمیل", phPass: "رمز عبور", loginBtn: "ورود", regBtn: "ثبت نام", okBtn: "باشه", logout: "خروج", tabPost: "پست", tabDash: "داشبورد", publish: "انتشار", totalAcc: "حساب‌ها", online: "آنلاین", fillAll: "فیلدها را پر کنید", tabNotif: "اعلان", notifTitle: "اعلان‌ها", newNotif: "اعلان جدید", notifPromo: "اگر می‌خواهید اعلان‌ها و انرژی خوب دریافت کنید، لطفاً برای دیدن اعلان‌های شاد یک حساب کاربری بسازید!", notifEnergy: "اگر بی‌حوصله یا خسته هستید، هر روز از اینجا دیدن کنید تا برای روزتان انرژی بگیرید!", college: "دانشکده", organization: "سازمان", jobs: "فرصت‌های شغلی", commentError: "متأسفم، برای ارسال نظر باید یک حساب کاربری ایجاد کنید!", commentPlaceholder: "نظری بنویسید...", replyPlaceholder: "پاسخی بنویسید..." }
     };
 
     function timeAgo(date) {
@@ -283,7 +453,6 @@
     window.changeLanguage = (l) => {
         currentLang = l;
         localStorage.setItem('userLang', l);
-        document.getElementById('lang-indicator').innerText = l.toUpperCase();
         document.getElementById('langSelect').value = l;
         document.querySelectorAll('.lang-nav').forEach(el => el.innerText = langData[l][el.dataset.key]);
         document.querySelectorAll('.lang-placeholder').forEach(el => el.placeholder = langData[l][el.dataset.key]);
@@ -314,23 +483,21 @@
         const heartIcon = document.getElementById('header-heart');
         if (user) {
             const userRef = doc(db, "users", user.email);
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-                currentUserData = userDoc.data();
-            } else {
-                currentUserData = { username: user.displayName || 'User', email: user.email, role: user.email === 'belalbelaluk@gmail.com' ? 'owner' : 'user', likes: [], notifEnabled: true, lastNotifView: Date.now() };
-                await setDoc(userRef, currentUserData);
-            }
+            onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    document.getElementById('user-display-name').innerText = currentUserData.username;
+                    document.getElementById('user-role-badge').innerText = currentUserData.role;
+                    updateNotifUI();
+                    loadPosts();
+                    loadNotifications();
+                }
+            });
             await updateDoc(userRef, { lastSeen: Date.now() });
             document.getElementById('auth-ui').classList.add('hidden');
             document.getElementById('user-profile').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = currentUserData.username;
-            document.getElementById('user-role-badge').innerText = currentUserData.role;
             heartIcon.classList.replace('fa-heart-broken', 'fa-heart');
             heartIcon.classList.replace('text-gray-400', 'text-red-500');
-            updateNotifUI();
-            loadPosts(); 
-            loadNotifications();
         } else {
             currentUserData = null;
             document.getElementById('auth-ui').classList.remove('hidden');
@@ -354,22 +521,18 @@
         if (!auth.currentUser) return showAlert(langData[currentLang].notifPromo);
         const newState = !currentUserData.notifEnabled;
         await updateDoc(doc(db, "users", auth.currentUser.email), { notifEnabled: newState });
-        currentUserData.notifEnabled = newState;
-        updateNotifUI();
-        loadNotifications();
     };
 
     function updateNotifUI() {
         const bell = document.getElementById('notif-bell');
         const toggleIcon = document.getElementById('notif-toggle-icon');
         const statusText = document.getElementById('notif-status-text');
-        
         if (currentUserData && currentUserData.notifEnabled) {
-            bell.className = "fas fa-bell text-[#ffd700] text-xl";
+            bell.className = "fas fa-bell text-[#ffd700] text-lg";
             toggleIcon.className = "fas fa-bell text-green-500";
             statusText.innerText = "ON";
         } else {
-            bell.className = "far fa-bell text-[#ffd700] text-xl opacity-50";
+            bell.className = "far fa-bell text-[#ffd700] text-lg opacity-50";
             toggleIcon.className = "far fa-bell-slash text-red-500";
             statusText.innerText = "OFF";
         }
@@ -386,9 +549,7 @@
                 const res = await createUserWithEmailAndPassword(auth, email, pass);
                 await updateProfile(res.user, { displayName: name });
                 await setDoc(doc(db, "users", email), { username: name, email: email, role: email === 'belalbelaluk@gmail.com' ? 'owner' : 'user', likes: [], notifEnabled: true, createdAt: Date.now(), lastSeen: Date.now(), lastNotifView: Date.now() });
-            } else {
-                await signInWithEmailAndPassword(auth, email, pass);
-            }
+            } else { await signInWithEmailAndPassword(auth, email, pass); }
         } catch (e) { showAlert(langData[currentLang].error); }
     };
 
@@ -404,11 +565,8 @@
         const text = document.getElementById('n-text').value;
         const lang = document.getElementById('n-lang').value;
         if (!text) return showAlert(langData[currentLang].fillAll);
-        
         try {
-            await addDoc(collection(db, "notifications"), {
-                text, lang, time: Date.now(), author: auth.currentUser.email, likesCount: 0
-            });
+            await addDoc(collection(db, "notifications"), { text, lang, time: Date.now(), author: auth.currentUser.email, likesCount: 0 });
             document.getElementById('n-text').value = "";
             showAlert("Notification Sent!", "fa-check-circle");
         } catch (e) { showAlert(langData[currentLang].error); }
@@ -420,11 +578,18 @@
         const text = document.getElementById('p-text').value;
         const link = document.getElementById('p-external-link').value;
         const file = document.getElementById('p-file').files[0];
+        const category = document.getElementById('p-cat').value;
+        const subcat = document.getElementById('p-subcat').value;
+        const expiryDays = parseInt(document.getElementById('p-expiry').value);
         const btn = document.getElementById('publish-btn');
         const progress = document.getElementById('upload-progress');
         if(!title || !text) return showAlert(langData[currentLang].fillAll);
         btn.disabled = true; btn.innerText = "Processing...";
         let mediaUrl = ""; let mediaType = "";
+        let expiryDate = 0;
+        if((category === 'org' || category === 'market' || (category === 'info' && subcat === 'jobs')) && expiryDays > 0) {
+            expiryDate = Date.now() + (expiryDays * 24 * 60 * 60 * 1000);
+        }
         try {
             if (file) {
                 progress.classList.remove('hidden');
@@ -441,105 +606,230 @@
             await addDoc(collection(db, "posts"), {
                 title, text, media: mediaUrl, mediaType, externalLink: link,
                 lang: document.getElementById('p-lang').value,
-                category: document.getElementById('p-cat').value,
-                time: Date.now(), author: auth.currentUser.email, likesCount: 0
+                category: category, subcat: (category === 'info' || category === 'market') ? subcat : null,
+                expiryDate: expiryDate, time: Date.now(), author: auth.currentUser.email, likesCount: 0
             });
             document.getElementById('adminModal').classList.add('hidden');
             showAlert("Success", "fa-check-circle");
             document.getElementById('p-title').value = ""; document.getElementById('p-text').value = "";
             document.getElementById('p-file').value = ""; document.getElementById('p-external-link').value = "";
-            progress.classList.add('hidden');
+            document.getElementById('p-expiry').value = "0"; progress.classList.add('hidden');
         } catch (e) { showAlert(langData[currentLang].error); } finally { btn.disabled = false; btn.innerText = langData[currentLang].publish; }
     };
 
     window.deleteItem = async (id, type) => {
-        if (!currentUserData || (currentUserData.role !== 'owner' && currentUserData.role !== 'admin')) return;
-        if (!confirm("Are you sure you want to delete this?")) return;
+        try { const col = type === 'post' ? "posts" : "notifications"; await deleteDoc(doc(db, col, id)); } catch (e) {}
+    };
+
+    window.toggleComments = async (postId) => {
+        const sec = document.getElementById(`comments-${postId}`);
+        const isHidden = sec.style.display === 'none' || sec.style.display === '';
+        sec.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) loadComments(postId);
+    };
+
+    window.submitComment = async (postId, replyTo = null) => {
+        if (!auth.currentUser) return showAlert(langData[currentLang].commentError);
+        const inputId = replyTo ? `reply-input-${replyTo}` : `comment-input-${postId}`;
+        const text = document.getElementById(inputId).value.trim();
+        if (!text) return;
         try {
-            const col = type === 'post' ? "posts" : "notifications";
-            await deleteDoc(doc(db, col, id));
-            showAlert("Deleted successfully", "fa-check-circle");
+            await addDoc(collection(db, "comments"), { postId, replyTo, text, user: currentUserData.username, email: auth.currentUser.email, time: Date.now() });
+            document.getElementById(inputId).value = "";
+            if(replyTo) document.getElementById(`reply-box-${replyTo}`).classList.add('hidden');
+            const sec = document.getElementById(`comments-${postId}`);
+            if(sec) sec.style.display = 'block';
         } catch (e) { showAlert(langData[currentLang].error); }
     };
 
-    window.toggleLike = async (postId, type = 'post') => {
+    window.showReplyInput = (commentId) => {
+        if (!auth.currentUser) return showAlert(langData[currentLang].commentError);
+        document.getElementById(`reply-box-${commentId}`).classList.toggle('hidden');
+    };
+
+    window.deleteComment = async (commentId) => {
+        if (currentUserData?.role === 'owner' || currentUserData?.role === 'admin') { await deleteDoc(doc(db, "comments", commentId)); }
+    };
+
+    function loadComments(postId) {
+        const q = query(collection(db, "comments"), where("postId", "==", postId), orderBy("time", "asc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById(`comment-list-${postId}`);
+            if(!list) return; list.innerHTML = "";
+            const comments = []; snap.forEach(d => comments.push({id: d.id, ...d.data()}));
+            const mainComments = comments.filter(c => !c.replyTo);
+            mainComments.forEach(c => {
+                const replies = comments.filter(r => r.replyTo === c.id);
+                let repliesHtml = "";
+                replies.forEach(r => {
+                    repliesHtml += `<div class="reply-item"><div class="flex justify-between items-center"><span class="font-bold text-[10px] text-blue-500">${r.user}</span>${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteComment('${r.id}')" class="text-red-400 text-[9px]"><i class="fas fa-trash"></i></button>` : ''}</div><p class="text-[11px]">${r.text}</p></div>`;
+                });
+                list.innerHTML += `<div class="comment-item"><div class="flex justify-between items-center"><span class="font-bold text-blue-600">${c.user}</span><div class="flex gap-2 items-center"><button onclick="window.showReplyInput('${c.id}')" class="text-gray-400 text-[10px]"><i class="fas fa-reply"></i> Reply</button>${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteComment('${c.id}')" class="text-red-400 text-[9px]"><i class="fas fa-trash"></i></button>` : ''}</div></div><p class="mt-1">${c.text}</p><div id="reply-box-${c.id}" class="hidden mt-2"><input id="reply-input-${c.id}" class="input-field text-[10px] py-1 mb-1" placeholder="${langData[currentLang].replyPlaceholder}"><button onclick="window.submitComment('${postId}', '${c.id}')" class="bg-blue-500 text-white text-[9px] px-3 py-1 rounded-lg">Send</button></div><div class="replies-container">${repliesHtml}</div></div>`;
+            });
+        });
+    }
+
+    window.toggleLike = async (itemId, type = 'post') => {
         if(!auth.currentUser) return showAlert(langData[currentLang].heartMsg, "fa-heart-broken");
         const userRef = doc(db, "users", auth.currentUser.email);
         const col = type === 'post' ? "posts" : "notifications";
-        const itemRef = doc(db, col, postId);
-        const isLiked = currentUserData.likes && currentUserData.likes.includes(postId);
+        const itemRef = doc(db, col, itemId);
+        const isLiked = currentUserData.likes && currentUserData.likes.includes(itemId);
         try {
-            if(isLiked) {
-                await updateDoc(userRef, { likes: arrayRemove(postId) });
-                await updateDoc(itemRef, { likesCount: increment(-1) });
-                currentUserData.likes = currentUserData.likes.filter(id => id !== postId);
-            } else {
-                await updateDoc(userRef, { likes: arrayUnion(postId) });
-                await updateDoc(itemRef, { likesCount: increment(1) });
-                if(!currentUserData.likes) currentUserData.likes = [];
-                currentUserData.likes.push(postId);
-            }
-            // Force reload lists to update Favorites page in real-time
-            loadPosts();
-            loadNotifications();
+            if(isLiked) { await updateDoc(userRef, { likes: arrayRemove(itemId) }); await updateDoc(itemRef, { likesCount: increment(-1) }); }
+            else { await updateDoc(userRef, { likes: arrayUnion(itemId) }); await updateDoc(itemRef, { likesCount: increment(1) }); }
         } catch(e) { console.error(e); }
     };
 
     function loadPosts() {
-        const q = query(collection(db, "posts"), where("lang", "==", currentLang), orderBy("time", "desc"));
-        onSnapshot(q, (snap) => {
-            const containers = { home: 'post-list', info: 'info-list', muslim: 'muslim-list', org: 'org-list' };
+        onSnapshot(collection(db, "posts"), (snap) => {
+            const containers = { 
+                home: 'post-list', org: 'org-list', 'info-college': 'info-college-list', 'info-organization': 'info-organization-list',
+                'info-jobs': 'info-jobs-list', 'market-car': 'market-car-list', 'market-business': 'market-business-list', 'market-house': 'market-house-list'
+            };
             Object.values(containers).forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = ""; });
-            if(document.getElementById('fav-post-list')) document.getElementById('fav-post-list').innerHTML = "";
             
+            const counts = { home:0, info:0, market:0, org:0, college:0, organization:0, jobs:0, car:0, business:0, house:0 };
+            const langCounts = { en: 0, ku: 0, ar: 0, fa: 0 };
+            
+            const favPostList = document.getElementById('fav-post-list');
+            if(favPostList) favPostList.innerHTML = "";
             let hasFavPost = false;
+
             snap.forEach(d => {
-                const p = d.data();
-                const isLiked = currentUserData?.likes?.includes(d.id);
-                let mediaHtml = "";
-                if(p.media) {
-                    if(p.mediaType === 'video') mediaHtml = `<video src="${p.media}" controls class="w-full h-auto rounded-xl mb-3 max-h-60 bg-black"></video>`;
-                    else mediaHtml = `<img src="${p.media}" class="w-full h-44 object-cover rounded-xl mb-3">`;
-                }
-                const postHtml = `<div class="post-card rounded-2xl p-4 shadow-sm mb-4 relative">
-                    ${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteItem('${d.id}', 'post')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-2 rounded-lg text-xs font-bold z-10"><i class="fas fa-trash"></i></button>` : ''}
-                    <div onclick="${p.externalLink ? `window.open('${p.externalLink}', '_blank')` : ''}" class="${p.externalLink ? 'cursor-pointer' : ''}">
-                        ${mediaHtml}
-                        <div class="flex justify-between items-start">
-                             <button onclick="event.stopPropagation(); window.toggleLike('${d.id}', 'post')" class="like-btn ${isLiked ? 'active' : 'text-gray-300'}"><i class="fas fa-heart"></i> <span class="text-[10px]">${p.likesCount || 0}</span></button>
-                             <div class="text-right flex-1">
-                                <h3 class="post-title font-bold text-md">${p.title}</h3>
-                                <p class="post-desc text-xs mt-1">${p.text}</p>
-                                <div class="flex justify-between items-center mt-2">
-                                    <span class="text-[9px] opacity-40 text-[var(--text-sub)]">${timeAgo(p.time)}</span>
-                                    ${p.externalLink ? `<span class="text-[10px] text-blue-500 underline">Link <i class="fas fa-external-link-alt"></i></span>` : ''}
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                </div>`;
+                const p = { id: d.id, ...d.data() };
+                langCounts[p.lang]++;
                 
-                if(document.getElementById(containers[p.category])) document.getElementById(containers[p.category]).innerHTML += postHtml;
-                
-                if(isLiked && document.getElementById('fav-post-list')) {
-                    document.getElementById('fav-post-list').innerHTML += postHtml;
-                    hasFavPost = true;
+                if(p.lang === currentLang) {
+                    if(p.expiryDate > 0 && Date.now() > p.expiryDate) { window.deleteItem(p.id, 'post'); return; }
+                    const isLiked = currentUserData?.likes?.includes(p.id);
+                    const postHtml = generatePostHtml(p, isLiked);
+                    let targetId = p.category;
+                    counts[p.category]++;
+                    if(p.category === 'info' || p.category === 'market') { targetId = `${p.category}-${p.subcat}`; counts[p.subcat]++; }
+                    if(document.getElementById(containers[targetId])) document.getElementById(containers[targetId]).innerHTML += postHtml;
+                    if(isLiked && favPostList) { favPostList.innerHTML += postHtml; hasFavPost = true; }
                 }
             });
-            
-            if(!hasFavPost && document.getElementById('fav-post-list')) {
-                document.getElementById('fav-post-list').innerHTML = `<p class="text-center py-10 opacity-40 text-xs text-[var(--text-sub)] lang-nav" data-key="emptyFav">${langData[currentLang].emptyFav}</p>`;
-            }
+
+            updateNavigationVisibility(counts);
+            updateLangVisibility(langCounts);
+
+            if(!hasFavPost && favPostList) { favPostList.innerHTML = `<p class="text-center py-10 opacity-40 text-xs text-[var(--text-sub)] lang-nav" data-key="emptyFav">${langData[currentLang].emptyFav}</p>`; }
         });
     }
 
-    window.closeRealtimeNotif = () => {
-        document.getElementById('realtimeNotif').classList.remove('show');
+    // --- لێرە گۆڕانکاری کراوە بۆ ئەوەی زمانەکان ئۆتۆماتیکی بشاردرێنەوە ---
+    function updateLangVisibility(langCounts) {
+        const select = document.getElementById('langSelect');
+        const wrapper = document.getElementById('langWrapper');
+        if (!select || !wrapper) return;
+        
+        const options = select.querySelectorAll('option');
+        let activeLangs = [];
+
+        options.forEach(opt => {
+            const count = langCounts[opt.value] || 0;
+            if (count > 0) {
+                opt.style.display = 'block';
+                activeLangs.push(opt.value);
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+
+        // ئەگەر هیچ زمانێک پۆستی تیا نەبوو یان تەنها یەک دانە بوو، لیستی گۆڕینی زمان بشارەوە
+        if (activeLangs.length <= 1) {
+            wrapper.style.display = 'none';
+        } else {
+            wrapper.style.display = 'flex';
+        }
+
+        // ئەگەر ئەو زمانەی ئێستا هەڵبژێردراوە پۆستی تیا نەبوو، بیگۆڕە بۆ یەکێک کە پۆستی تیا بێت
+        if (!activeLangs.includes(currentLang) && activeLangs.length > 0) {
+            window.changeLanguage(activeLangs[0]);
+        }
     }
 
+    function updateNavigationVisibility(counts) {
+        const navs = ['info', 'market', 'org'];
+        navs.forEach(nav => {
+            const btn = document.getElementById(`nav-btn-${nav}`);
+            if(counts[nav] > 0) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+        });
+        const infoTabs = ['college', 'organization', 'jobs'];
+        infoTabs.forEach(tab => {
+            const btn = document.getElementById(`btn-info-${tab}`);
+            if(counts[tab] > 0) { btn.style.display = 'flex'; btn.classList.add('flex-1'); } else { btn.style.display = 'none'; btn.classList.remove('flex-1'); }
+        });
+        const marketTabs = ['car', 'business', 'house'];
+        marketTabs.forEach(tab => {
+            const btn = document.getElementById(`btn-market-${tab}`);
+            if(counts[tab] > 0) { btn.style.display = 'flex'; btn.classList.add('flex-1'); } else { btn.style.display = 'none'; btn.classList.remove('flex-1'); }
+        });
+        ensureActiveTab('info', infoTabs, counts);
+        ensureActiveTab('market', marketTabs, counts);
+    }
+
+    function ensureActiveTab(page, tabs, counts) {
+        let activeExists = false;
+        tabs.forEach(t => {
+            const btn = document.getElementById(`btn-${page}-${t}`);
+            if(btn && btn.classList.contains('active') && counts[t] > 0) activeExists = true;
+        });
+        if(!activeExists) {
+            for(let t of tabs) {
+                if(counts[t] > 0) { if(page === 'info') switchInfoTab(t); else switchMarketTab(t); break; }
+            }
+        }
+    }
+
+    function generatePostHtml(p, isLiked) {
+        let mediaHtml = "";
+        if(p.media) {
+            if(p.mediaType === 'video') mediaHtml = `<video src="${p.media}" controls class="w-full h-auto rounded-xl mb-3 max-h-60 bg-black"></video>`;
+            else mediaHtml = `<img src="${p.media}" class="w-full h-auto object-cover rounded-xl mb-3">`;
+        }
+        return `<div class="post-card p-4 shadow-sm mb-4 relative" id="card-${p.id}">
+            ${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteItem('${p.id}', 'post')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-2 rounded-lg text-xs font-bold z-10"><i class="fas fa-trash"></i></button>` : ''}
+            <div>
+                <div onclick="${p.externalLink ? `window.open('${p.externalLink}', '_blank')` : ''}" class="${p.externalLink ? 'cursor-pointer' : ''}">
+                    ${mediaHtml}
+                    <div class="text-right">
+                        <h3 class="post-title font-bold text-md">${p.title}</h3>
+                        <p class="post-desc text-xs mt-1 mb-4 opacity-80">${p.text}</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center border-t border-[var(--border)] pt-3">
+                    <div class="flex gap-4">
+                        <button onclick="window.toggleLike('${p.id}', 'post')" class="like-btn ${isLiked ? 'active' : 'text-gray-400'} flex items-center gap-1">
+                            <i class="fas fa-heart"></i> 
+                            <span class="text-[10px] font-bold">${p.likesCount || 0}</span>
+                        </button>
+                        <button onclick="window.toggleComments('${p.id}')" class="text-gray-400 flex items-center gap-1">
+                            <i class="far fa-comment-dots"></i>
+                            <span class="text-[10px] font-bold">Comment</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-[9px] opacity-40 text-[var(--text-sub)]">${timeAgo(p.time)}</span>
+                        ${p.externalLink ? `<span class="text-[10px] text-blue-500 underline">Link <i class="fas fa-external-link-alt"></i></span>` : ''}
+                    </div>
+                </div>
+                <div id="comments-${p.id}" class="comments-section">
+                    <div id="comment-list-${p.id}" class="max-h-60 overflow-y-auto mb-3"></div>
+                    <div class="flex gap-2">
+                        <input id="comment-input-${p.id}" class="input-field text-xs mb-0" placeholder="${langData[currentLang].commentPlaceholder}">
+                        <button onclick="window.submitComment('${p.id}')" class="bg-[var(--accent)] text-black font-bold px-4 rounded-xl text-xs">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    window.closeRealtimeNotif = () => { document.getElementById('realtimeNotif').classList.remove('show'); }
     let notifQueue = [];
     let isShowingNotif = false;
-
     function processNotifQueue() {
         if (notifQueue.length === 0 || isShowingNotif) return;
         isShowingNotif = true;
@@ -550,10 +840,7 @@
         text.innerText = msg;
         popup.classList.add('show');
         sound.play().catch(e => {});
-        setTimeout(() => {
-            popup.classList.remove('show');
-            setTimeout(() => { isShowingNotif = false; processNotifQueue(); }, 600);
-        }, 5000);
+        setTimeout(() => { popup.classList.remove('show'); setTimeout(() => { isShowingNotif = false; processNotifQueue(); }, 600); }, 5000);
     }
 
     function loadNotifications() {
@@ -561,56 +848,28 @@
         const dot = document.getElementById('notif-dot');
         const favNotifList = document.getElementById('fav-notif-list');
         const q = query(collection(db, "notifications"), where("lang", "==", currentLang), orderBy("time", "desc"));
-        
         onSnapshot(q, (snap) => {
             if(list) list.innerHTML = "";
             if(favNotifList) favNotifList.innerHTML = "";
-            
-            let unreadCount = 0;
-            let hasFavNotif = false;
+            let unreadCount = 0; let hasFavNotif = false;
             const lastView = currentUserData?.lastNotifView || 0;
-
             snap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const n = change.doc.data();
                     if (n.lang === currentLang && n.time > appStartTime && !processedNotifs.has(change.doc.id)) {
-                        if (currentUserData?.notifEnabled) {
-                            processedNotifs.add(change.doc.id);
-                            notifQueue.push(n.text);
-                            processNotifQueue();
-                        }
+                        if (currentUserData?.notifEnabled) { processedNotifs.add(change.doc.id); notifQueue.push(n.text); processNotifQueue(); }
                     }
                 }
             });
-
             snap.forEach(d => {
-                const n = d.data();
-                const isLiked = currentUserData?.likes?.includes(d.id);
+                const n = { id: d.id, ...d.data() };
+                const isLiked = currentUserData?.likes?.includes(n.id);
                 if (n.time > lastView) unreadCount++;
-
-                const html = `
-                    <div class="bg-yellow-50 dark:bg-yellow-900/10 border-r-4 border-yellow-500 p-4 rounded-xl shadow-sm relative">
-                        ${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteItem('${d.id}', 'notif')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-1 rounded-md text-[10px] font-bold"><i class="fas fa-trash"></i></button>` : ''}
-                        <div class="flex justify-between items-start">
-                             <button onclick="window.toggleLike('${d.id}', 'notif')" class="like-btn ${isLiked ? 'active' : 'text-gray-300'}">
-                                <i class="fas fa-heart"></i> <span class="text-[10px]">${n.likesCount || 0}</span>
-                             </button>
-                             <p class="text-sm font-bold flex-1 text-right mr-3 text-[var(--text-main)]">${n.text}</p>
-                             <i class="fas fa-bullhorn text-yellow-600 text-xs"></i>
-                        </div>
-                        <div class="text-[9px] opacity-40 text-left mt-2 text-[var(--text-sub)]">${timeAgo(n.time)}</div>
-                    </div>`;
+                const html = `<div class="bg-yellow-50 dark:bg-yellow-900/10 border-r-4 border-yellow-500 p-4 rounded-xl shadow-sm relative">${(currentUserData?.role === 'owner' || currentUserData?.role === 'admin') ? `<button onclick="window.deleteItem('${n.id}', 'notif')" class="absolute top-2 left-2 text-red-500 bg-red-100 p-1 rounded-md text-[10px] font-bold"><i class="fas fa-trash"></i></button>` : ''}<div class="flex justify-between items-start"><button onclick="window.toggleLike('${n.id}', 'notif')" class="like-btn ${isLiked ? 'active' : 'text-gray-300'}"><i class="fas fa-heart"></i> <span class="text-[10px]">${n.likesCount || 0}</span></button><p class="text-sm font-bold flex-1 text-right mr-3 text-[var(--text-main)]">${n.text}</p><i class="fas fa-bullhorn text-yellow-600 text-xs"></i></div><div class="text-[9px] opacity-40 text-left mt-2 text-[var(--text-sub)]">${timeAgo(n.time)}</div></div>`;
                 if(list) list.innerHTML += html;
-                
-                if(isLiked && favNotifList) {
-                    favNotifList.innerHTML += html;
-                    hasFavNotif = true;
-                }
+                if(isLiked && favNotifList) { favNotifList.innerHTML += html; hasFavNotif = true; }
             });
-            
-            if(!hasFavNotif && favNotifList) {
-                favNotifList.innerHTML = `<p class="text-center py-10 opacity-40 text-xs text-[var(--text-sub)] lang-nav" data-key="emptyFav">${langData[currentLang].emptyFav}</p>`;
-            }
+            if(!hasFavNotif && favNotifList) { favNotifList.innerHTML = `<p class="text-center py-10 opacity-40 text-xs text-[var(--text-sub)] lang-nav" data-key="emptyFav">${langData[currentLang].emptyFav}</p>`; }
             if(dot) dot.style.display = unreadCount > 0 ? "block" : "none";
         });
     }
@@ -631,18 +890,18 @@
             const userData = d.data(); window.allUsers.push(userData);
             if (userData.lastSeen && (now - userData.lastSeen) < 300000) onlineCount++;
         });
-        document.getElementById('acc-count').innerText = snap.size;
-        document.getElementById('online-count').innerText = onlineCount;
+        const accCountEl = document.getElementById('acc-count');
+        const onlineCountEl = document.getElementById('online-count');
+        if(accCountEl) accCountEl.innerText = snap.size;
+        if(onlineCountEl) onlineCountEl.innerText = onlineCount;
         renderUserList(window.allUsers);
     });
 
     onSnapshot(collection(db, "online_anon"), (snap) => {
         let anonCount = 0; const now = Date.now();
-        snap.forEach(d => {
-            if (now - d.data().lastSeen < 300000) anonCount++;
-            else deleteDoc(doc(db, "online_anon", d.id)); 
-        });
-        document.getElementById('anon-count').innerText = anonCount;
+        snap.forEach(d => { if (now - d.data().lastSeen < 300000) anonCount++; else deleteDoc(doc(db, "online_anon", d.id)); });
+        const anonCountEl = document.getElementById('anon-count');
+        if(anonCountEl) anonCountEl.innerText = anonCount;
     });
 
     window.renderUserList = (users) => {
@@ -651,16 +910,7 @@
         const isOwner = auth.currentUser?.email === 'belalbelaluk@gmail.com';
         users.forEach(u => {
             const isMe = auth.currentUser?.email === u.email;
-            list.innerHTML += `<div class="flex flex-col bg-[var(--bg-main)] p-3 rounded-xl mb-2 border border-[var(--border)]">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="text-right text-[var(--text-main)]"><div class="font-bold text-xs">${u.username || 'User'}</div><div class="text-[10px] opacity-60">${u.email}</div></div>
-                    <span class="text-[9px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-600 uppercase">${u.role || 'user'}</span>
-                </div>
-                ${(isOwner && !isMe) ? `<div class="flex gap-1 mt-1">
-                    <button onclick="window.updateRole('${u.email}', 'admin')" class="flex-1 bg-blue-600 text-white text-[9px] py-1.5 rounded-lg font-bold">Admin</button>
-                    <button onclick="window.updateRole('${u.email}', 'user')" class="flex-1 bg-gray-400 text-white text-[9px] py-1.5 rounded-lg font-bold">User</button>
-                </div>` : ''}
-            </div>`;
+            list.innerHTML += `<div class="flex flex-col bg-[var(--bg-main)] p-3 rounded-xl mb-2 border border-[var(--border)]"><div class="flex justify-between items-start mb-2"><div class="text-right text-[var(--text-main)]"><div class="font-bold text-xs">${u.username || 'User'}</div><div class="text-[10px] opacity-60">${u.email}</div></div><span class="text-[9px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-600 uppercase">${u.role || 'user'}</span></div>${(isOwner && !isMe) ? `<div class="flex gap-1 mt-1"><button onclick="window.updateRole('${u.email}', 'admin')" class="flex-1 bg-blue-600 text-white text-[9px] py-1.5 rounded-lg font-bold">Admin</button><button onclick="window.updateRole('${u.email}', 'user')" class="flex-1 bg-gray-400 text-white text-[9px] py-1.5 rounded-lg font-bold">User</button></div>` : ''}</div>`;
         });
     };
 
@@ -680,14 +930,65 @@
 </script>
 
 <script>
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if(savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        document.getElementById('theme-icon').className = "fas fa-sun text-yellow-300 text-lg cursor-pointer";
+    }
+
+    function toggleAdminSubFields(cat) {
+        const subContainer = document.getElementById('info-subcat-container');
+        const expiryContainer = document.getElementById('expiry-container');
+        const subSelect = document.getElementById('p-subcat');
+        subSelect.innerHTML = "";
+        if(cat === 'info') {
+            subContainer.classList.remove('hidden'); expiryContainer.classList.add('hidden');
+            subSelect.innerHTML = `<option value="college">College</option><option value="organization">Organization</option><option value="jobs">Jobs</option>`;
+            toggleExpiryField(subSelect.value);
+        } else if(cat === 'market') {
+            subContainer.classList.remove('hidden'); expiryContainer.classList.remove('hidden');
+            subSelect.innerHTML = `<option value="car">Car</option><option value="business">Business</option><option value="house">House</option>`;
+        } else if(cat === 'org') { subContainer.classList.add('hidden'); expiryContainer.classList.remove('hidden'); }
+        else { subContainer.classList.add('hidden'); expiryContainer.classList.add('hidden'); }
+    }
+
+    function toggleExpiryField(subcat) {
+        const container = document.getElementById('expiry-container');
+        const mainCat = document.getElementById('p-cat').value;
+        if(mainCat === 'org' || mainCat === 'market' || (mainCat === 'info' && subcat === 'jobs')) { container.classList.remove('hidden'); }
+        else { container.classList.add('hidden'); }
+    }
+
     function showPage(id, btn) {
-        if(id === 'notif-page' && window.triggerMarkRead) {
-            window.triggerMarkRead();
-        }
+        if(id === 'notif-page' && window.triggerMarkRead) { window.triggerMarkRead(); }
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
         document.getElementById(id).classList.add('active-page');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.replace('active-nav', 'text-gray-400'));
         if(btn && btn.classList.contains('nav-item')) btn.classList.replace('text-gray-400', 'active-nav');
+    }
+
+    function switchInfoTab(tab) {
+        const tabs = ['college', 'organization', 'jobs'];
+        tabs.forEach(t => {
+            const list = document.getElementById(`info-${t}-list`);
+            const btn = document.getElementById(`btn-info-${t}`);
+            if(list && btn) {
+                if(t === tab) { list.classList.remove('hidden'); btn.classList.add('active'); }
+                else { list.classList.add('hidden'); btn.classList.remove('active'); }
+            }
+        });
+    }
+
+    function switchMarketTab(tab) {
+        const tabs = ['car', 'business', 'house'];
+        tabs.forEach(t => {
+            const list = document.getElementById(`market-${t}-list`);
+            const btn = document.getElementById(`btn-market-${t}`);
+            if(list && btn) {
+                if(t === tab) { list.classList.remove('hidden'); btn.classList.add('active'); }
+                else { list.classList.add('hidden'); btn.classList.remove('active'); }
+            }
+        });
     }
 
     function switchFavTab(tab) {
@@ -695,18 +996,8 @@
         const notifsFolder = document.getElementById('fav-notifs-folder');
         const btnPosts = document.getElementById('btn-fav-posts');
         const btnNotifs = document.getElementById('btn-fav-notifs');
-
-        if(tab === 'posts') {
-            postsFolder.classList.remove('hidden');
-            notifsFolder.classList.add('hidden');
-            btnPosts.classList.add('active');
-            btnNotifs.classList.remove('active');
-        } else {
-            postsFolder.classList.add('hidden');
-            notifsFolder.classList.remove('hidden');
-            btnPosts.classList.remove('active');
-            btnNotifs.classList.add('active');
-        }
+        if(tab === 'posts') { postsFolder.classList.remove('hidden'); notifsFolder.classList.add('hidden'); btnPosts.classList.add('active'); btnNotifs.classList.remove('active'); }
+        else { postsFolder.classList.add('hidden'); notifsFolder.classList.remove('hidden'); btnPosts.classList.remove('active'); btnNotifs.classList.add('active'); }
     }
 
     function closeAdmin() { document.getElementById('adminModal').classList.add('hidden'); }
@@ -715,15 +1006,14 @@
         document.getElementById('tab-dash').classList.toggle('hidden', t !== 'dash');
         document.getElementById('tab-notif').classList.toggle('hidden', t !== 'notif');
         const tabs = { post: 'tab-p-btn', dash: 'tab-d-btn', notif: 'tab-n-btn' };
-        Object.keys(tabs).forEach(k => {
-            document.getElementById(tabs[k]).className = k === t ? "flex-1 py-2 text-blue-600 border-b-2 border-blue-600" : "flex-1 py-2 opacity-40";
-        });
+        Object.keys(tabs).forEach(k => { document.getElementById(tabs[k]).className = k === t ? "flex-1 py-2 text-blue-600 border-b-2 border-blue-600" : "flex-1 py-2 opacity-40"; });
     }
     function toggleTheme() {
         const body = document.body;
         body.classList.toggle('dark');
         const isDark = body.classList.contains('dark');
-        document.getElementById('theme-icon').className = isDark ? "fas fa-sun text-yellow-300 text-xl cursor-pointer" : "fas fa-moon text-gray-900 text-xl cursor-pointer";
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        document.getElementById('theme-icon').className = isDark ? "fas fa-sun text-yellow-300 text-lg cursor-pointer" : "fas fa-moon text-gray-900 text-lg cursor-pointer";
     }
 </script>
 </body>
