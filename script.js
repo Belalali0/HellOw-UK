@@ -497,3 +497,6 @@ function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getE
 function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); }
 
 document.addEventListener('DOMContentLoaded', init);
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
