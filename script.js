@@ -89,7 +89,7 @@ function cleanExpiredPosts() {
 }
 
 window.changeTab = (tab, el) => { 
-    closeHeartMenu(); 
+    if(typeof closeHeartMenu === 'function') closeHeartMenu(); 
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
     if(el) el.classList.add('active'); 
     localStorage.setItem('lastMainTab', tab);
@@ -547,9 +547,9 @@ function timeAgo(d) {
     return Math.floor(s/2592000) + "mo " + t.ago;
 }
 
-function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
-function closeAuthAlert() { document.getElementById('auth-alert-modal').style.display = 'none'; }
-function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getElementById('nav-btn-account')); }
-function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); }
+window.toggleAdminBar = () => { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } };
+window.closeAuthAlert = () => { document.getElementById('auth-alert-modal').style.display = 'none'; };
+window.goToAccountTab = () => { closeAuthAlert(); changeTab('account', document.getElementById('nav-btn-account')); };
+window.searchUsers = (val) => { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); };
 
 document.addEventListener('DOMContentLoaded', init);
