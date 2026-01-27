@@ -31,10 +31,10 @@ function ensureOwnerAccount() {
 }
 
 const uiTrans = {
-    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:" },
-    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Account needed", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:" },
-    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "يجب تسجيل الدخول", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:" },
-    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "باید وارد شوید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:" }
+    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
+    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
+    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
+    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
 };
 
 const subCategories = {
@@ -214,7 +214,6 @@ window.renderPostHTML = (p) => {
     const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.adminName || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
     const commentCount = (comments[p.id] || []).length;
     
-    // ئایکۆنی لینک بە دیزاینێکی ناسک ئەگەر لینک هەبوو
     const linkBtnHTML = p.postLink ? `
         <a href="${p.postLink.startsWith('http') ? p.postLink : 'https://' + p.postLink}" target="_blank" 
            class="flex items-center justify-center w-9 h-9 bg-blue-500/20 rounded-full text-blue-400 hover:scale-110 transition-transform">
@@ -351,7 +350,7 @@ window.submitPost = () => {
     
     allPosts.push({ 
         id: Date.now(), title, desc, 
-        postLink: postLink, // پاشەکەوتکردنی لینک
+        postLink: postLink,
         adminName, userEmail, 
         lang: document.getElementById('post-lang').value, 
         category: cat, subCategory: document.getElementById('post-sub-category').value, 
@@ -360,7 +359,6 @@ window.submitPost = () => {
     
     localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
     
-    // سڕینەوەی خانەکان
     document.getElementById('post-title').value = "";
     document.getElementById('post-desc').value = "";
     if(document.getElementById('post-external-link')) document.getElementById('post-external-link').value = "";
@@ -403,12 +401,31 @@ function renderUsers(users) {
 
 window.toggleUserRole = (email) => { if (currentUser?.email !== OWNER_EMAIL) return; const idx = registeredUsers.findIndex(u => u.email === email); if (idx !== -1) { registeredUsers[idx].role = registeredUsers[idx].role === 'admin' ? 'user' : 'admin'; localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); filterUserList('all'); } };
 function updateCounters() { const now = Date.now(); document.getElementById('stat-total-users').innerText = registeredUsers.length; document.getElementById('stat-online-users').innerText = registeredUsers.filter(u => (now - u.lastActive) < 300000).length; document.getElementById('stat-guest-users').innerText = guestActivity.filter(g => (now - g.lastActive) < 300000).length; }
+
 window.showAllNotifs = () => {
-    document.getElementById('heart-overlay').style.display='block'; document.getElementById('fav-title-main').innerText = uiTrans[currentLang].notifSec;
-    document.getElementById('fav-nav-tabs').style.display = 'none'; document.getElementById('notif-toggle-btn').style.display = 'flex';
-    const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang).sort((a,b)=>b.id-a.id);
-    document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    const t = uiTrans[currentLang];
+    document.getElementById('heart-overlay').style.display='block'; 
+    document.getElementById('fav-title-main').innerText = t.notifSec;
+    document.getElementById('fav-nav-tabs').style.display = 'none'; 
+    document.getElementById('notif-toggle-btn').style.display = 'flex';
+    
+    if (!currentUser) {
+        document.getElementById('fav-items-display').innerHTML = `
+            <div class="p-8 text-center animate-fade">
+                <i class="fas fa-bullhorn text-4xl mb-4 opacity-20"></i>
+                <p class="text-sm leading-relaxed opacity-80 mb-4">${t.notifMsg}</p>
+                <p class="text-[10px] opacity-40 mb-6">${t.wantReg}</p>
+                <div class="flex gap-3 px-4">
+                    <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
+                    <button onclick="closeHeartMenu()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
+                </div>
+            </div>`;
+    } else {
+        const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang).sort((a,b)=>b.id-a.id);
+        document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    }
 };
+
 window.openHeartMenu = () => { document.getElementById('heart-overlay').style.display='block'; document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; document.getElementById('fav-nav-tabs').style.display = 'flex'; document.getElementById('notif-toggle-btn').style.display = 'none'; showFavorites('post'); };
 function trackUserActivity() { 
     const now = Date.now(); if (currentUser) { 
@@ -424,10 +441,16 @@ function trackUserActivity() {
 }
 function checkNewNotifs() { if(!currentUser) return; const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); const newOnes = allPosts.filter(p => p.category === 'notif' && p.id > lastSeen && p.lang === currentLang); if(newOnes.length > 0) { let i = 0; const inv = setInterval(() => { if(i < newOnes.length) { if(notifOnScreen) fireToast(newOnes[i].title, newOnes[i].desc); i++; } else { clearInterval(inv); localStorage.setItem('lastNotifSeen', Date.now()); } }, 1500); } }
 function fireToast(t, d) { const audio = document.getElementById('notif-sound'); if(audio) audio.play().catch(e=>{}); const toast = document.getElementById('toast-area'); document.getElementById('toast-title').innerText = t; document.getElementById('toast-desc').innerText = d; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 6000); }
+
 window.openComments = (id) => { activeCommentPostId = id; replyingToId = null; document.getElementById('comment-modal').style.display = 'flex'; renderComments(); updateCommentInputArea(); };
+
 window.updateCommentInputArea = () => {
     const area = document.getElementById('comment-input-area');
-    if(!currentUser) { area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500">${uiTrans[currentLang].authErr}</div>`; return; }
+    const t = uiTrans[currentLang];
+    if(!currentUser) { 
+        area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500 font-bold bg-yellow-500/5 rounded-xl border border-yellow-500/20 m-2">${t.noComment}</div>`; 
+        return; 
+    }
     area.innerHTML = `
         ${replyingToId ? `<div class="px-4 py-1 text-[10px] bg-blue-500/10 flex justify-between"><span>Replying to...</span><button onclick="cancelReply()" class="text-red-400">Cancel</button></div>` : ''}
         <div class="flex gap-2 p-2">
@@ -435,6 +458,7 @@ window.updateCommentInputArea = () => {
             <button onclick="submitComment()" class="p-4 bg-green-500 rounded-xl"><i class="fas fa-paper-plane text-black"></i></button>
         </div>`;
 };
+
 window.renderComments = () => {
     const list = document.getElementById('comment-list');
     const allComs = (comments[activeCommentPostId] || []);
@@ -444,12 +468,25 @@ window.renderComments = () => {
         return renderSingleComment(c, false) + `<div class="ml-6 border-l-2 border-white/5 pl-3">${reps.map(r => renderSingleComment(r, true)).join('')}</div>`;
     }).join('') || '<p class="text-center opacity-20">Empty</p>';
 };
+
 function renderSingleComment(c, isRep) {
     const t = uiTrans[currentLang];
     const isOwner = currentUser && currentUser.email === c.userEmail;
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
-    return `<div class="bg-white/5 p-3 rounded-2xl mb-2"><div class="flex justify-between items-start text-[10px] mb-1"><span class="opacity-40"><b>@${c.userName}</b> • ${timeAgo(c.id)}</span><div class="flex gap-2">${!isRep ? `<button onclick="setReply(${c.id})" class="text-blue-400">${t.rep}</button>` : ''}${isOwner ? `<button onclick="editComment(${c.id}, '${c.text}')" class="text-yellow-400 opacity-60">${t.edit}</button>` : ''}${(isOwner || isAdmin) ? `<button onclick="deleteComment(${c.id})" class="text-red-400 opacity-60">${t.del}</button>` : ''}</div></div><p class="text-sm opacity-90">${c.text}</p></div>`;
+    return `
+    <div class="bg-white/5 p-3 rounded-2xl mb-2">
+        <div class="flex justify-between items-start text-[10px] mb-1">
+            <span class="opacity-40"><b>@${c.userName}</b> • ${timeAgo(c.id)}</span>
+            <div class="flex gap-2">
+                ${!isRep ? `<button onclick="checkAuthAndAction(() => setReply(${c.id}))" class="text-blue-400">${t.rep}</button>` : ''}
+                ${isOwner ? `<button onclick="editComment(${c.id}, '${c.text}')" class="text-yellow-400 opacity-60">${t.edit}</button>` : ''}
+                ${(isOwner || isAdmin) ? `<button onclick="deleteComment(${c.id})" class="text-red-400 opacity-60">${t.del}</button>` : ''}
+            </div>
+        </div>
+        <p class="text-sm opacity-90">${c.text}</p>
+    </div>`;
 }
+
 window.submitComment = () => {
     const input = document.getElementById('comment-input');
     if(!input.value.trim()) return;
@@ -478,7 +515,26 @@ window.openCloudinaryWidget = () => { cloudinary.openUploadWidget({ cloudName: "
 window.updateSubSelect = (cat) => { const s = document.getElementById('post-sub-category'); if (['info', 'market', 'discount'].includes(cat)) { s.style.display = 'block'; s.innerHTML = subCategories[cat][currentLang].map(i => `<option value="${i}">${i}</option>`).join(''); } else s.style.display = 'none'; };
 window.toggleNotifScreenStatus = () => { notifOnScreen = !notifOnScreen; localStorage.setItem('notifOnScreen', notifOnScreen); updateNotifToggleUI(); };
 function updateNotifToggleUI() { const i = document.getElementById('notif-toggle-icon'); if(i) i.className = (notifOnScreen ? 'fas fa-bell' : 'far fa-bell') + " text-2xl"; }
-window.checkAuthAndAction = (cb) => { if(!currentUser) { document.getElementById('auth-alert-modal').style.display = 'flex'; } else cb(); };
+
+window.checkAuthAndAction = (cb) => { 
+    if(!currentUser) { 
+        const t = uiTrans[currentLang];
+        const modal = document.getElementById('auth-alert-modal');
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="glass-card p-6 w-80 animate-fade text-center border-red-500/20">
+                <i class="fas fa-user-shield text-3xl text-red-500 mb-4"></i>
+                <h3 class="font-bold text-lg mb-2">${t.authErr}</h3>
+                <p class="text-xs opacity-50 mb-6">${t.wantReg}</p>
+                <div class="flex gap-3">
+                    <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold">${t.yes}</button>
+                    <button onclick="closeAuthAlert()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold">${t.no}</button>
+                </div>
+            </div>`;
+    } else {
+        cb();
+    }
+};
 
 function timeAgo(d) {
     const s = Math.floor((new Date() - new Date(d)) / 1000);
@@ -497,6 +553,3 @@ function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getE
 function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); }
 
 document.addEventListener('DOMContentLoaded', init);
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
