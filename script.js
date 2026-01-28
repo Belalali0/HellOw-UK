@@ -1,11 +1,16 @@
+// --- Supabase Config ---
+const supabaseUrl = 'https://yqjfdtrjngwaoeygeiqh.supabase.co';
+const supabaseKey = 'sb_publishable_kR58sr2ch1wun_WmJqmetw_ailryRxc'; 
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
 // --- Variables & State ---
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
 let currentLang = localStorage.getItem('appLang') || 'ku';
 let isDarkMode = localStorage.getItem('theme') !== 'light';
-let allPosts = JSON.parse(localStorage.getItem('allPosts')) || [];
+let allPosts = []; 
 let userFavorites = JSON.parse(localStorage.getItem('userFavorites')) || {}; 
-let comments = JSON.parse(localStorage.getItem('postComments')) || {};
-let likeCounts = JSON.parse(localStorage.getItem('likeCounts')) || {};
+let comments = {}; 
+let likeCounts = {}; 
 let hiddenItems = JSON.parse(localStorage.getItem('hiddenItems')) || { langs: [], navs: [], factions: [] };
 let notifOnScreen = localStorage.getItem('notifOnScreen') !== 'false';
 let tempMedia = { url: "", type: "" };
@@ -14,26 +19,47 @@ let replyingToId = null;
 let currentFavTab = 'post';
 let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
-let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
+let registeredUsers = []; 
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
+const OWNER_PASS = 'belal5171';
 
-function ensureOwnerAccount() {
-    const ownerIdx = registeredUsers.findIndex(u => u.email === OWNER_EMAIL);
-    if (ownerIdx === -1) {
-        registeredUsers.push({ email: OWNER_EMAIL, password: 'belal5171', name: 'Belal', role: 'admin', lastActive: Date.now() });
-    } else {
-        registeredUsers[ownerIdx].password = 'belal5171';
-        registeredUsers[ownerIdx].role = 'admin';
-    }
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+// --- Functions to Sync with Database ---
+
+async function syncAllData() {
+    try {
+        const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
+        allPosts = postsData || [];
+
+        const { data: comsData } = await _supabase.from('comments').select('*');
+        comments = {};
+        if (comsData) {
+            comsData.forEach(c => {
+                if (!comments[c.post_id]) comments[c.post_id] = [];
+                comments[c.post_id].push(c);
+            });
+        }
+
+        const { data: likesData } = await _supabase.from('likes').select('*');
+        likeCounts = {};
+        if (likesData) {
+            likesData.forEach(l => {
+                likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
+            });
+        }
+
+        const { data: usersData } = await _supabase.from('users').select('*');
+        registeredUsers = usersData || [];
+        
+        updateUIScript();
+        updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+    } catch (e) { console.error("Sync Error:", e); }
 }
 
 const uiTrans = {
-    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
-    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
-    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
-    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
+    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ببورە ناتوانی پێویستە ئەکاونت دروست بکەیت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
+    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "Sorry, you cannot. You need to create an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
+    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "عذراً، لا يمكنك. يجب عليك إنشاء حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
+    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "ببخشید، نمی‌توانید. باید حساب کاربری بسازید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
 };
 
 const subCategories = {
@@ -42,19 +68,47 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-function init() {
-    ensureOwnerAccount();
+// --- Header Functions ---
+
+window.toggleDarkMode = () => {
+    isDarkMode = !isDarkMode;
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    cleanExpiredPosts();
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+};
+
+window.openLangMenu = () => {
+    const el = document.getElementById('lang-overlay');
+    if (el) el.style.display = 'flex';
+};
+
+window.changeLanguage = (lang) => {
+    currentLang = lang;
+    localStorage.setItem('appLang', lang);
+    const el = document.getElementById('lang-overlay');
+    if (el) el.style.display = 'none';
+    
+    // دڵنیابوونەوە لە نوێکردنەوەی هەموو شتێک
     updateUIScript();
-    updateHeartUI();
+    const lastTab = localStorage.getItem('lastMainTab') || 'news';
+    updateTabContent(lastTab);
+};
+
+// داخستنی مینووەکان کاتێک کلیک لە دەرەوەیان دەکرێت
+window.addEventListener('click', (event) => {
+    const langOverlay = document.getElementById('lang-overlay');
+    const heartOverlay = document.getElementById('heart-overlay');
+    if (event.target === langOverlay) langOverlay.style.display = 'none';
+    if (event.target === heartOverlay) heartOverlay.style.display = 'none';
+});
+
+async function init() {
+    document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    await syncAllData(); 
     updateBossIcon();
     const lastMain = localStorage.getItem('lastMainTab') || 'news';
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
-    changeTab(lastMain, activeBtn);
+    if(activeBtn) changeTab(lastMain, activeBtn);
     checkNewNotifs();
-    updateNotifToggleUI();
-    trackUserActivity();
 }
 
 function updateBossIcon() {
@@ -81,14 +135,8 @@ function getHideBtn(type, value) {
                onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
 }
 
-function cleanExpiredPosts() {
-    const now = Date.now();
-    allPosts = allPosts.filter(p => (!p.expiryDate || p.expiryDate === "never") ? true : now < p.expiryDate);
-    localStorage.setItem('allPosts', JSON.stringify(allPosts));
-}
-
 window.changeTab = (tab, el) => { 
-    closeHeartMenu(); 
+    if(typeof closeHeartMenu === "function") closeHeartMenu(); 
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
     if(el) el.classList.add('active'); 
     localStorage.setItem('lastMainTab', tab);
@@ -121,8 +169,9 @@ window.updateUIScript = () => {
     }
 
     ['news','info','market','discount','account'].forEach(k => { 
-        const label = document.getElementById('nav-'+k);
-        if(label) label.innerText = t[k]; 
+        const navEl = document.getElementById('nav-'+k);
+        if(navEl) navEl.innerText = t[k]; 
+        
         const btn = document.getElementById('nav-btn-' + k);
         if (btn) {
             const isHiddenByBoss = hiddenItems.navs.includes(k);
@@ -147,35 +196,32 @@ window.updateTabContent = (tab) => {
     const display = document.getElementById('content-display');
     const subNav = document.getElementById('sub-nav-container');
     const subBar = document.getElementById('sub-nav-bar');
-    if(!display) return;
     const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
 
     if (['info', 'market', 'discount'].includes(tab)) {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
             const isHiddenByBoss = hiddenItems.factions.includes(sub);
             if (isBoss) return true;
-            return !isHiddenByBoss && allPosts.some(p => p.category === tab && p.subCategory === sub && p.lang === currentLang);
+            return !isHiddenByBoss && allPosts.some(p => p.category === tab && p.sub_category === sub && p.lang === currentLang);
         });
 
         if (availableSubs.length > 0) {
-            if(subNav) subNav.style.display = 'block';
+            subNav.style.display = 'block';
             if (!activeSubCategory || !availableSubs.includes(activeSubCategory)) {
                 activeSubCategory = availableSubs[0];
             }
-            if(subBar) {
-                subBar.innerHTML = availableSubs.map(item => `
-                    <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''} flex items-center justify-center gap-2" 
-                    onclick="filterBySub('${tab}', '${item}')">
-                        ${item} ${getHideBtn('factions', item)}
-                    </button>
-                `).join('');
-            }
+            subBar.innerHTML = availableSubs.map(item => `
+                <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''} flex items-center justify-center gap-2" 
+                onclick="filterBySub('${tab}', '${item}')">
+                    ${item} ${getHideBtn('factions', item)}
+                </button>
+            `).join('');
         } else {
-            if(subNav) subNav.style.display = 'none';
+            subNav.style.display = 'none';
             activeSubCategory = null;
         }
     } else { 
-        if(subNav) subNav.style.display = 'none'; 
+        subNav.style.display = 'none'; 
     }
 
     if (tab === 'account') { 
@@ -183,7 +229,7 @@ window.updateTabContent = (tab) => {
     } else {
         let filtered = allPosts.filter(p => p.lang === currentLang && p.category === tab);
         if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
-            filtered = filtered.filter(p => p.subCategory === activeSubCategory);
+            filtered = filtered.filter(p => p.sub_category === activeSubCategory);
         }
         filtered.sort((a,b)=>b.id-a.id);
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
@@ -196,29 +242,29 @@ function formatFullDate(ts) {
 }
 
 window.renderPostHTML = (p) => {
-    const favList = userFavorites[currentUser?.email] || [];
-    const isLiked = favList.some(f => f.id === p.id);
-    const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
     
+    const isLiked = currentUser && userFavorites[currentUser.email] && userFavorites[currentUser.email].some(f => f.id === p.id);
+    const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
+    
     let expiryHTML = '';
-    if (p.expiryDate === 'never' || !p.expiryDate) {
+    if (p.expiry_date === 'never' || !p.expiry_date) {
         if (isAdmin) expiryHTML = `<span class="expiry-tag"><i class="far fa-clock"></i> NEVER</span>`;
     } else {
-        const diff = p.expiryDate - Date.now();
+        const diff = p.expiry_date - Date.now();
         const days = Math.floor(diff / 86400000);
         const hours = Math.floor((diff % 86400000) / 3600000);
         const timeLeftLine = `<span class="expiry-tag"><i class="far fa-clock"></i> ${t.time_left} ${days}d ${hours}h</span>`;
-        if (isAdmin) { expiryHTML = `<div class="flex flex-col items-end gap-1"><span class="duration-info">${t.ads_for} ${p.durationLabel || "Never"}</span>${timeLeftLine}</div>`; }
+        if (isAdmin) { expiryHTML = `<div class="flex flex-col items-end gap-1"><span class="duration-info">${t.ads_for} ${p.duration_label || "Never"}</span>${timeLeftLine}</div>`; }
         else if (p.category === 'discount') { expiryHTML = `<div class="flex flex-col items-end gap-1">${timeLeftLine}</div>`; }
     }
 
-    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.adminName || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
+    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.admin_name || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
     const commentCount = (comments[p.id] || []).length;
     
-    const linkBtnHTML = p.postLink ? `
-        <a href="${p.postLink.startsWith('http') ? p.postLink : 'https://' + p.postLink}" target="_blank" 
+    const linkBtnHTML = p.post_link ? `
+        <a href="${p.post_link.startsWith('http') ? p.post_link : 'https://' + p.post_link}" target="_blank" 
            class="flex items-center justify-center w-9 h-9 bg-blue-500/20 rounded-full text-blue-400 hover:scale-110 transition-transform">
             <i class="fas fa-link text-sm"></i>
         </a>` : '';
@@ -228,7 +274,7 @@ window.renderPostHTML = (p) => {
         ${mediaHTML}
         <div class="post-body">
             <div class="flex justify-between items-start mb-1">
-                <span class="text-[10px] opacity-40 mb-2">${timeAgo(p.id)}</span>
+                <span class="text-[10px] opacity-40 mb-2">${typeof timeAgo === "function" ? timeAgo(p.id) : ""}</span>
                 <div class="flex gap-3 items-center">
                     ${linkBtnHTML}
                     ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
@@ -269,121 +315,148 @@ window.renderAuthUI = (mode = 'login') => {
     }
 };
 
-window.handleLogin = () => {
-    const e = document.getElementById('auth-email').value.trim();
+window.handleLogin = async () => {
+    const e = document.getElementById('auth-email').value.trim().toLowerCase();
     const p = document.getElementById('auth-pass').value.trim();
-    const user = registeredUsers.find(u => u.email === e && u.password === p);
-    if (user) { currentUser = user; localStorage.setItem('user', JSON.stringify(currentUser)); trackUserActivity(); init(); } else { alert(uiTrans[currentLang].authFail); }
+    
+    if (e === OWNER_EMAIL && p === OWNER_PASS) {
+        currentUser = { email: e, name: 'Boss Belal', role: 'admin' };
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        window.location.reload(); 
+        return;
+    }
+
+    const { data: user, error } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
+    if (user) { 
+        currentUser = user; 
+        localStorage.setItem('user', JSON.stringify(currentUser)); 
+        window.location.reload(); 
+    } else { 
+        alert(uiTrans[currentLang].authFail); 
+    }
 };
 
-window.handleRegister = () => {
+window.handleRegister = async () => {
     const u = document.getElementById('reg-user').value.trim();
-    const e = document.getElementById('reg-email').value.trim();
+    const e = document.getElementById('reg-email').value.trim().toLowerCase();
     const p = document.getElementById('reg-pass').value.trim();
     if (!u || !e || !p) return;
-    if (registeredUsers.some(user => user.email === e)) { alert("Email already exists"); return; }
-    const newUser = { email: e, password: p, name: u, role: e === OWNER_EMAIL ? 'admin' : 'user', lastActive: Date.now() };
-    registeredUsers.push(newUser); localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-    alert(uiTrans[currentLang].regSuccess); renderAuthUI('login');
+    const { data: existing } = await _supabase.from('users').select('email').eq('email', e).single();
+    if (existing) { alert("Email already exists"); return; }
+    
+    const newUser = { email: e, password: p, name: u, role: e === OWNER_EMAIL ? 'admin' : 'user', last_active: Date.now() };
+    const { error } = await _supabase.from('users').insert([newUser]);
+    if (!error) {
+        alert(uiTrans[currentLang].regSuccess); renderAuthUI('login');
+    }
 };
 
-window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
+window.logout = () => {
+    localStorage.removeItem('user');
+    window.location.reload();
+};
 
-window.toggleFavorite = (id) => {
-    checkAuthAndAction(() => {
-        const key = currentUser.email;
-        if(!userFavorites[key]) userFavorites[key] = [];
-        const idx = userFavorites[key].findIndex(f => f.id === id);
-        if(!likeCounts[id]) likeCounts[id] = 0;
-        const isCurrentlyLiked = idx !== -1;
-        if(!isCurrentlyLiked) { 
-            userFavorites[key].unshift({ id: id, likedAt: Date.now() }); 
-            likeCounts[id]++; 
-        } else { 
-            userFavorites[key].splice(idx, 1); 
-            likeCounts[id]--; 
-        }
-        localStorage.setItem('userFavorites', JSON.stringify(userFavorites)); 
-        localStorage.setItem('likeCounts', JSON.stringify(likeCounts));
-        
-        const countText = document.getElementById(`like-count-${id}`);
-        if (countText) countText.innerText = likeCounts[id];
-        
-        const btn = document.getElementById(`like-btn-${id}`);
-        if(btn) {
-            const icon = btn.querySelector('i');
-            if(icon) icon.className = isCurrentlyLiked ? 'far fa-heart opacity-50 text-xl' : 'fas fa-heart text-red-500 text-xl';
-        }
-        updateHeartUI();
-    });
+window.filterBySub = (tab, subName) => { 
+    activeSubCategory = subName; 
+    lastVisitedSub[tab] = subName; 
+    localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); 
+    updateTabContent(tab); 
+};
+
+window.toggleFavorite = async (id) => {
+    if (!currentUser) { showGuestAuthAlert(); return; }
+    const email = currentUser.email;
+    const { data: existing } = await _supabase.from('likes').select('*').eq('post_id', id).eq('user_email', email).single();
+    
+    if (!existing) {
+        await _supabase.from('likes').insert([{ post_id: id, user_email: email }]);
+    } else {
+        await _supabase.from('likes').delete().eq('post_id', id).eq('user_email', email);
+    }
+    await syncAllData();
 };
 
 window.showFavorites = (type) => {
     currentFavTab = type; document.querySelectorAll('.fav-nav-btn').forEach(b => b.classList.remove('active'));
-    const btnId = type === 'post' ? 'btn-fav-post' : 'btn-fav-notif';
-    const btn = document.getElementById(btnId);
+    const btn = document.getElementById(type === 'post' ? 'btn-fav-post' : 'btn-fav-notif');
     if(btn) btn.classList.add('active');
-    let favData = userFavorites[currentUser?.email] || []; 
-    favData.sort((a,b) => b.likedAt - a.likedAt);
-    const items = favData.map(f => allPosts.find(p => p.id === f.id)).filter(p => p && (type === 'post' ? p.category !== 'notif' : p.category === 'notif'));
-    const favDisplay = document.getElementById('fav-items-display');
-    if(favDisplay) favDisplay.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    
+    if (!currentUser) {
+        showGuestAuthAlert();
+        return;
+    }
+    
+    let likedItems = [];
+    if (type === 'post') {
+        likedItems = allPosts.filter(p => p.category !== 'notif' && (likeCounts[p.id] > 0));
+    } else {
+        likedItems = allPosts.filter(p => p.category === 'notif' && (likeCounts[p.id] > 0));
+    }
+    
+    document.getElementById('fav-items-display').innerHTML = likedItems.length ? likedItems.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
 
-window.submitPost = () => {
+window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
-    const postLink = document.getElementById('post-external-link')?.value.trim() || "";
+    const postLink = document.getElementById('post-external-link') ? document.getElementById('post-external-link').value.trim() : "";
     const cat = document.getElementById('post-category').value; 
     const durSelect = document.getElementById('post-duration');
     const duration = durSelect.value; 
     const durationLabel = durSelect.options[durSelect.selectedIndex].text;
-    const subCatEl = document.getElementById('post-sub-category');
-    const subCategory = (subCatEl && subCatEl.style.display !== 'none') ? subCatEl.value : "";
     
     if(!title && !desc && !tempMedia.url) return;
     
-    let expiryDate = "never"; 
+    let expiryDate = null; 
     if (duration !== "never") { 
         const units = { '1w': 7, '2w': 14, '3w': 21, '1m': 30, '2m': 60, '3m': 90 }; 
         expiryDate = Date.now() + (units[duration] * 86400000); 
     }
     
     const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
-    const userEmail = currentUser ? currentUser.email : "system";
     
-    allPosts.push({ 
-        id: Date.now(), title, desc, postLink, adminName, userEmail, 
+    const newPost = { 
+        title, desc, 
+        post_link: postLink,
+        admin_name: adminName, 
+        user_email: currentUser?.email || "system", 
         lang: document.getElementById('post-lang').value, 
-        category: cat, subCategory: subCategory, 
-        expiryDate, durationLabel, media: tempMedia.url 
-    }); 
+        category: cat, 
+        sub_category: document.getElementById('post-sub-category').value, 
+        expiry_date: expiryDate, 
+        duration_label: durationLabel, 
+        media: tempMedia.url 
+    }; 
     
-    localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
-    tempMedia = { url: "", type: "" };
-    closePostModal(); 
-    init(); 
+    const { error } = await _supabase.from('posts').insert([newPost]);
+    if(!error) {
+        if(typeof closePostModal === "function") closePostModal(); 
+        await syncAllData();
+    }
 };
 
-window.submitNotif = () => {
+window.submitNotif = async () => {
     const title = document.getElementById('notif-title').value; 
     const desc = document.getElementById('notif-desc').value;
-    const lang = document.getElementById('notif-lang').value; 
-    if(!title && !desc) return;
-    allPosts.push({ id: Date.now(), title, desc, adminName: (currentUser?.name || "Admin"), userEmail: currentUser?.email || "system", lang, category: 'notif', media: "", expiryDate: "never", durationLabel: "Never" });
-    localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
-    closeNotifModal(); 
-    init();
+    const lang = document.getElementById('notif-lang').value;
+    const { error } = await _supabase.from('posts').insert([{
+        title, desc, lang, category: 'notif', admin_name: currentUser?.name || "Admin", user_email: currentUser?.email
+    }]);
+    if(!error) {
+        if(typeof closeNotifModal === "function") closeNotifModal(); 
+        await syncAllData();
+    }
 };
 
-window.openAdminStats = () => { 
+window.openAdminStats = () => {
     const modal = document.getElementById('admin-stats-modal');
-    if(modal) modal.style.display = 'flex'; 
-    filterUserList('all'); 
+    if (modal) modal.style.display = 'flex';
+    filterUserList('all');
 };
+
 window.closeAdminStats = () => {
     const modal = document.getElementById('admin-stats-modal');
-    if(modal) modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
 };
 
 window.filterUserList = (filterType) => {
@@ -391,89 +464,86 @@ window.filterUserList = (filterType) => {
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
     const btn = document.getElementById('btn-stat-' + filterType);
     if(btn) btn.classList.add('active');
-    let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.lastActive) < 300000);
-    renderUsers(usersToDisplay); 
-    updateCounters();
+    let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.last_active) < 300000);
+    renderUsers(usersToDisplay); updateCounters();
 };
 
 function renderUsers(users) {
     const list = document.getElementById('admin-user-list'); 
-    if(!list) return;
     const isBoss = currentUser?.email === OWNER_EMAIL;
     list.innerHTML = users.map(u => {
         const isUserBoss = u.email === OWNER_EMAIL;
         const postCount = allPosts.filter(p => p.userEmail === u.email).length;
         const roleLabel = isUserBoss ? "BOSS" : (u.role === "admin" ? "ADMIN" : "USER");
         const roleColor = isUserBoss ? "bg-yellow-500/30 border-yellow-500/50" : (u.role === "admin" ? "bg-red-500/30 border-red-500/50" : "bg-blue-500/20 border-blue-500/30");
-        return `<div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade"><div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${(Date.now() - u.lastActive) < 300000 ? 'bg-green-500' : 'bg-gray-500'}"></div><div><div class="flex items-center gap-2"><span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span><span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span></div><span class="text-[10px] opacity-40 italic d-block">${u.email}</span><div class="text-[10px] text-green-400 mt-1 font-bold">Posts: ${postCount}</div></div></div>${isBoss && !isUserBoss ? `<button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border backdrop-blur-lg">${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}</button>` : ''}</div>`;
+        return `<div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade"><div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${(Date.now() - u.last_active) < 300000 ? 'bg-green-500' : 'bg-gray-500'}"></div><div><div class="flex items-center gap-2"><span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span><span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span></div><span class="text-[10px] opacity-40 italic d-block">${u.email}</span><div class="text-[10px] text-green-400 mt-1 font-bold">Posts: ${postCount}</div></div></div>${isBoss && !isUserBoss ? `<button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border backdrop-blur-lg">${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}</button>` : ''}</div>`;
     }).join('');
 }
 
-window.toggleUserRole = (email) => { 
+window.toggleUserRole = async (email) => { 
     if (currentUser?.email !== OWNER_EMAIL) return; 
-    const idx = registeredUsers.findIndex(u => u.email === email); 
-    if (idx !== -1) { 
-        registeredUsers[idx].role = registeredUsers[idx].role === 'admin' ? 'user' : 'admin'; 
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
-        filterUserList('all'); 
-    } 
+    const user = registeredUsers.find(u => u.email === email);
+    const newRole = user.role === 'admin' ? 'user' : 'admin';
+    await _supabase.from('users').update({ role: newRole }).eq('email', email);
+    await syncAllData();
+    filterUserList('all');
 };
 
 function updateCounters() { 
     const now = Date.now(); 
-    const total = document.getElementById('stat-total-users');
-    const online = document.getElementById('stat-online-users');
-    const guest = document.getElementById('stat-guest-users');
-    if(total) total.innerText = registeredUsers.length; 
-    if(online) online.innerText = registeredUsers.filter(u => (now - u.lastActive) < 300000).length; 
-    if(guest) guest.innerText = guestActivity.filter(g => (now - g.lastActive) < 300000).length; 
+    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = registeredUsers.length; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = registeredUsers.filter(u => (now - u.last_active) < 300000).length; 
 }
 
 window.showAllNotifs = () => {
     const t = uiTrans[currentLang];
-    const overlay = document.getElementById('heart-overlay');
-    if(overlay) overlay.style.display='block'; 
-    const title = document.getElementById('fav-title-main');
-    if(title) title.innerText = t.notifSec;
-    const tabs = document.getElementById('fav-nav-tabs');
-    if(tabs) tabs.style.display = 'none'; 
-    const toggleBtn = document.getElementById('notif-toggle-btn');
-    if(toggleBtn) toggleBtn.style.display = 'flex';
-    
-    const display = document.getElementById('fav-items-display');
-    if (!currentUser && display) {
-        display.innerHTML = `<div class="p-8 text-center animate-fade"><i class="fas fa-bullhorn text-4xl mb-4 opacity-20"></i><p class="text-sm leading-relaxed opacity-80 mb-4">${t.notifMsg}</p><p class="text-[10px] opacity-40 mb-6">${t.wantReg}</p><div class="flex gap-3 px-4"><button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button><button onclick="closeHeartMenu()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button></div></div>`;
-    } else if (display) {
-        const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang).sort((a,b)=>b.id-a.id);
-        display.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    const el = document.getElementById('heart-overlay');
+    if (el) {
+        el.style.display='block'; 
+        document.getElementById('fav-title-main').innerText = t.notifSec;
+        document.getElementById('fav-nav-tabs').style.display = 'none'; 
+        if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'flex';
+        
+        if (!currentUser) {
+            showGuestAuthAlert();
+        } else {
+            const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
+            document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : `<p class="text-center py-10 opacity-20">${t.empty}</p>`;
+        }
     }
 };
 
 window.openHeartMenu = () => { 
-    const overlay = document.getElementById('heart-overlay');
-    if(overlay) overlay.style.display='block'; 
-    const title = document.getElementById('fav-title-main');
-    if(title) title.innerText = uiTrans[currentLang].fav; 
-    const tabs = document.getElementById('fav-nav-tabs');
-    if(tabs) tabs.style.display = 'flex'; 
-    const toggleBtn = document.getElementById('notif-toggle-btn');
-    if(toggleBtn) toggleBtn.style.display = 'none'; 
-    showFavorites('post'); 
+    const el = document.getElementById('heart-overlay');
+    if (el) {
+        if(!currentUser) {
+            showGuestAuthAlert();
+        } else {
+            el.style.display='block'; 
+            document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; 
+            document.getElementById('fav-nav-tabs').style.display = 'flex'; 
+            if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'none'; 
+            showFavorites('post'); 
+        }
+    }
 };
 
-function trackUserActivity() { 
-    const now = Date.now(); 
-    if (currentUser) { 
-        let idx = registeredUsers.findIndex(u => u.email === currentUser.email); 
-        if (idx !== -1) { registeredUsers[idx].lastActive = now; } 
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
-    } else { 
-        let gId = localStorage.getItem('guestId') || 'Guest_'+Math.floor(Math.random()*1000); 
-        localStorage.setItem('guestId', gId); 
-        let gIdx = guestActivity.findIndex(g => g.id === gId); 
-        if(gIdx !== -1) guestActivity[gIdx].lastActive = now; else guestActivity.push({id:gId, lastActive:now}); 
-        localStorage.setItem('guestActivity', JSON.stringify(guestActivity)); 
-    } 
+function showGuestAuthAlert() {
+    const t = uiTrans[currentLang];
+    const el = document.getElementById('heart-overlay');
+    if (el) {
+        el.style.display='block';
+        document.getElementById('fav-items-display').innerHTML = `
+            <div class="p-8 text-center animate-fade">
+                <i class="fas fa-lock text-4xl mb-4 opacity-20"></i>
+                <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
+                <p class="text-[11px] leading-relaxed opacity-60 mb-6">${t.wantReg}</p>
+                <div class="flex gap-3 px-4">
+                    <button onclick="changeTab('account', document.getElementById('nav-btn-account'))" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
+                    <button onclick="document.getElementById('heart-overlay').style.display='none'" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
+                </div>
+            </div>`;
+    }
 }
 
 function checkNewNotifs() { 
@@ -481,31 +551,9 @@ function checkNewNotifs() {
     const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); 
     const newOnes = allPosts.filter(p => p.category === 'notif' && p.id > lastSeen && p.lang === currentLang); 
     if(newOnes.length > 0) { 
-        let i = 0; 
-        const inv = setInterval(() => { 
-            if(i < newOnes.length) { 
-                if(notifOnScreen) fireToast(newOnes[i].title, newOnes[i].desc); 
-                i++; 
-            } else { 
-                clearInterval(inv); 
-                localStorage.setItem('lastNotifSeen', Date.now()); 
-            } 
-        }, 1500); 
+        if(typeof fireToast === "function") fireToast(newOnes[0].title, newOnes[0].desc); 
+        localStorage.setItem('lastNotifSeen', Date.now().toString()); 
     } 
-}
-
-function fireToast(t, d) { 
-    const audio = document.getElementById('notif-sound'); 
-    if(audio) audio.play().catch(e=>{}); 
-    const toast = document.getElementById('toast-area'); 
-    const title = document.getElementById('toast-title');
-    const desc = document.getElementById('toast-desc');
-    if(title) title.innerText = t; 
-    if(desc) desc.innerText = d; 
-    if(toast) {
-        toast.classList.add('show'); 
-        setTimeout(() => toast.classList.remove('show'), 6000); 
-    }
 }
 
 window.openComments = (id) => { 
@@ -522,11 +570,10 @@ window.updateCommentInputArea = () => {
     if(!area) return;
     const t = uiTrans[currentLang];
     if(!currentUser) { 
-        area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500 font-bold bg-yellow-500/5 rounded-xl border border-yellow-500/20 m-2">${t.noComment}</div>`; 
+        area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500">${t.noComment}</div>`; 
         return; 
     }
     area.innerHTML = `
-        ${replyingToId ? `<div class="px-4 py-1 text-[10px] bg-blue-500/10 flex justify-between"><span>Replying to...</span><button onclick="cancelReply()" class="text-red-400">Cancel</button></div>` : ''}
         <div class="flex gap-2 p-2">
             <input id="comment-input" type="text" class="auth-input flex-1 !mb-0" placeholder="Write...">
             <button onclick="submitComment()" class="p-4 bg-green-500 rounded-xl"><i class="fas fa-paper-plane text-black"></i></button>
@@ -536,120 +583,30 @@ window.updateCommentInputArea = () => {
 window.renderComments = () => {
     const list = document.getElementById('comment-list');
     if(!list) return;
-    const allComs = (comments[activeCommentPostId] || []);
-    const mainComs = allComs.filter(c => !c.parentId).sort((a,b) => b.id - a.id);
-    list.innerHTML = mainComs.map(c => {
-        const reps = allComs.filter(r => r.parentId === c.id).sort((a,b) => a.id - b.id);
-        return renderSingleComment(c, false) + `<div class="ml-6 border-l-2 border-white/5 pl-3">${reps.map(r => renderSingleComment(r, true)).join('')}</div>`;
-    }).join('') || '<p class="text-center opacity-20">Empty</p>';
+    const allComs = comments[activeCommentPostId] || [];
+    list.innerHTML = allComs.map(c => `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`).join('') || '<p class="text-center opacity-20">Empty</p>';
 };
 
-function renderSingleComment(c, isRep) {
-    const t = uiTrans[currentLang];
-    const isOwner = currentUser && currentUser.email === c.userEmail;
-    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
-    return `
-    <div class="bg-white/5 p-3 rounded-2xl mb-2">
-        <div class="flex justify-between items-start text-[10px] mb-1">
-            <span class="opacity-40"><b>@${c.userName}</b> • ${timeAgo(c.id)}</span>
-            <div class="flex gap-2">
-                ${!isRep ? `<button onclick="checkAuthAndAction(() => setReply(${c.id}))" class="text-blue-400">${t.rep}</button>` : ''}
-                ${isOwner ? `<button onclick="editComment(${c.id}, '${c.text}')" class="text-yellow-400 opacity-60">${t.edit}</button>` : ''}
-                ${(isOwner || isAdmin) ? `<button onclick="deleteComment(${c.id})" class="text-red-400 opacity-60">${t.del}</button>` : ''}
-            </div>
-        </div>
-        <p class="text-sm opacity-90">${c.text}</p>
-    </div>`;
-}
-
-window.submitComment = () => {
+window.submitComment = async () => {
     const input = document.getElementById('comment-input');
     if(!input || !input.value.trim()) return;
-    if(!comments[activeCommentPostId]) comments[activeCommentPostId] = [];
-    comments[activeCommentPostId].push({ id: Date.now(), parentId: replyingToId, userEmail: currentUser.email, userName: (currentUser.name || currentUser.email.split('@')[0]), text: input.value });
-    localStorage.setItem('postComments', JSON.stringify(comments));
-    input.value = ''; replyingToId = null; renderComments(); updateTabContent(localStorage.getItem('lastMainTab'));
-};
-
-window.setReply = (id) => { replyingToId = id; updateCommentInputArea(); document.getElementById('comment-input')?.focus(); };
-window.cancelReply = () => { replyingToId = null; updateCommentInputArea(); };
-window.deleteComment = (comId) => { if(!confirm("Delete?")) return; comments[activeCommentPostId] = comments[activeCommentPostId].filter(c => c.id !== comId && c.parentId !== comId); localStorage.setItem('postComments', JSON.stringify(comments)); renderComments(); updateTabContent(localStorage.getItem('lastMainTab')); };
-window.deletePost = (id) => { if(confirm('Delete?')) { allPosts = allPosts.filter(x => x.id !== id); localStorage.setItem('allPosts', JSON.stringify(allPosts)); init(); } };
-window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
-window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
-window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
-window.updateHeartUI = () => { const h = document.getElementById('main-heart'); if(h) h.className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
-window.closeLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'none'; };
-window.openLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'flex'; };
-
-window.openPostModal = () => { 
-    const el = document.getElementById('post-modal'); 
-    if(el) {
-        el.style.display = 'flex';
-        // لێرەدا کاتێک مۆداڵەکە ئەکەیتەوە، ئۆتۆماتیکی سەیری ئەو تابە دەکات کە لێیەتی
-        const currentTab = localStorage.getItem('lastMainTab') || 'news';
-        const postCatSelect = document.getElementById('post-category');
-        if(postCatSelect) {
-            postCatSelect.value = currentTab;
-            updateSubSelect(currentTab); // فاکشنەکان نوێ دەکاتەوە
-        }
+    const { error } = await _supabase.from('comments').insert([{
+        post_id: activeCommentPostId,
+        user_email: currentUser.email,
+        user_name: currentUser.name,
+        text: input.value
+    }]);
+    if(!error) {
+        input.value = ''; await syncAllData(); renderComments();
     }
 };
 
-window.closePostModal = () => { const el = document.getElementById('post-modal'); if(el) el.style.display = 'none'; };
-window.openNotifModal = () => { const el = document.getElementById('notif-modal'); if(el) el.style.display = 'flex'; };
-window.closeNotifModal = () => { const el = document.getElementById('notif-modal'); if(el) el.style.display = 'none'; };
-window.closeCommentModal = () => { const el = document.getElementById('comment-modal'); if(el) el.style.display='none'; };
-window.closeHeartMenu = () => { const el = document.getElementById('heart-overlay'); if(el) el.style.display='none'; };
-window.openCloudinaryWidget = () => { cloudinary.openUploadWidget({ cloudName: "dbttb8vmg", uploadPreset: "Hellowuk" }, (err, res) => { if (res.event === "success") { tempMedia.url = res.info.secure_url; const status = document.getElementById('upload-status'); if(status) status.innerText = "✅"; } }); };
-
-window.updateSubSelect = (cat) => { 
-    const s = document.getElementById('post-sub-category'); 
-    if (s && ['info', 'market', 'discount'].includes(cat)) { 
-        s.style.display = 'block'; 
-        s.innerHTML = subCategories[cat][currentLang].map(i => `<option value="${i}">${i}</option>`).join(''); 
-    } else if(s) {
-        s.style.display = 'none'; 
-    }
+window.deletePost = async (id) => { 
+    if(confirm('Delete?')) { 
+        await _supabase.from('posts').delete().eq('id', id);
+        await syncAllData();
+    } 
 };
 
-window.toggleNotifScreenStatus = () => { notifOnScreen = !notifOnScreen; localStorage.setItem('notifOnScreen', notifOnScreen); updateNotifToggleUI(); };
-function updateNotifToggleUI() { const i = document.getElementById('notif-toggle-icon'); if(i) i.className = (notifOnScreen ? 'fas fa-bell' : 'far fa-bell') + " text-2xl"; }
-
-window.checkAuthAndAction = (cb) => { 
-    if(!currentUser) { 
-        const t = uiTrans[currentLang];
-        const modal = document.getElementById('auth-alert-modal');
-        if(modal) {
-            modal.style.display = 'flex';
-            modal.innerHTML = `
-                <div class="glass-card p-6 w-80 animate-fade text-center border-red-500/20">
-                    <i class="fas fa-user-shield text-3xl text-red-500 mb-4"></i>
-                    <h3 class="font-bold text-lg mb-2">${t.authErr}</h3>
-                    <p class="text-xs opacity-50 mb-6">${t.wantReg}</p>
-                    <div class="flex gap-3">
-                        <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold">${t.yes}</button>
-                        <button onclick="closeAuthAlert()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold">${t.no}</button>
-                    </div>
-                </div>`;
-        }
-    } else { cb(); }
-};
-
-function timeAgo(d) {
-    const s = Math.floor((new Date() - new Date(d)) / 1000);
-    const t = uiTrans[currentLang];
-    if (s < 60) return t.now;
-    if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
-    if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
-    if (s < 604800) return Math.floor(s/86400) + "d " + t.ago;
-    if (s < 2592000) return Math.floor(s/604800) + "w " + t.ago;
-    return Math.floor(s/2592000) + "mo " + t.ago;
-}
-
-function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); if(bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
-function closeAuthAlert() { const el = document.getElementById('auth-alert-modal'); if(el) el.style.display = 'none'; }
-function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getElementById('nav-btn-account')); }
-function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); }
-
-document.addEventListener('DOMContentLoaded', init);
+// --- Initialization ---
+init();
