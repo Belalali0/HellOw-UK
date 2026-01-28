@@ -68,7 +68,7 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-// --- چاکسازی بەشی سەرەوە (Header Fixes) ---
+// --- Header Functions ---
 
 window.toggleDarkMode = () => {
     isDarkMode = !isDarkMode;
@@ -86,17 +86,20 @@ window.changeLanguage = (lang) => {
     localStorage.setItem('appLang', lang);
     const el = document.getElementById('lang-overlay');
     if (el) el.style.display = 'none';
+    
+    // دڵنیابوونەوە لە نوێکردنەوەی هەموو شتێک
     updateUIScript();
-    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+    const lastTab = localStorage.getItem('lastMainTab') || 'news';
+    updateTabContent(lastTab);
 };
 
-// بۆ داخستنی مینووەکان کاتێک کلیک لە دەرەوەیان دەکرێت
-window.onclick = (event) => {
+// داخستنی مینووەکان کاتێک کلیک لە دەرەوەیان دەکرێت
+window.addEventListener('click', (event) => {
     const langOverlay = document.getElementById('lang-overlay');
     const heartOverlay = document.getElementById('heart-overlay');
-    if (event.target == langOverlay) langOverlay.style.display = 'none';
-    if (event.target == heartOverlay) heartOverlay.style.display = 'none';
-};
+    if (event.target === langOverlay) langOverlay.style.display = 'none';
+    if (event.target === heartOverlay) heartOverlay.style.display = 'none';
+});
 
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
@@ -166,7 +169,9 @@ window.updateUIScript = () => {
     }
 
     ['news','info','market','discount','account'].forEach(k => { 
-        if(document.getElementById('nav-'+k)) document.getElementById('nav-'+k).innerText = t[k]; 
+        const navEl = document.getElementById('nav-'+k);
+        if(navEl) navEl.innerText = t[k]; 
+        
         const btn = document.getElementById('nav-btn-' + k);
         if (btn) {
             const isHiddenByBoss = hiddenItems.navs.includes(k);
@@ -351,7 +356,12 @@ window.logout = () => {
     window.location.reload();
 };
 
-window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
+window.filterBySub = (tab, subName) => { 
+    activeSubCategory = subName; 
+    lastVisitedSub[tab] = subName; 
+    localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); 
+    updateTabContent(tab); 
+};
 
 window.toggleFavorite = async (id) => {
     if (!currentUser) { showGuestAuthAlert(); return; }
@@ -452,13 +462,15 @@ window.closeAdminStats = () => {
 window.filterUserList = (filterType) => {
     const now = Date.now();
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    if(document.getElementById('btn-stat-' + filterType)) document.getElementById('btn-stat-' + filterType).classList.add('active');
+    const btn = document.getElementById('btn-stat-' + filterType);
+    if(btn) btn.classList.add('active');
     let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.last_active) < 300000);
     renderUsers(usersToDisplay); updateCounters();
 };
 
 function renderUsers(users) {
-    const list = document.getElementById('admin-user-list'); const isBoss = currentUser?.email === OWNER_EMAIL;
+    const list = document.getElementById('admin-user-list'); 
+    const isBoss = currentUser?.email === OWNER_EMAIL;
     list.innerHTML = users.map(u => {
         const isUserBoss = u.email === OWNER_EMAIL;
         const postCount = allPosts.filter(p => p.userEmail === u.email).length;
@@ -547,13 +559,15 @@ function checkNewNotifs() {
 window.openComments = (id) => { 
     activeCommentPostId = id; 
     replyingToId = null; 
-    document.getElementById('comment-modal').style.display = 'flex'; 
+    const modal = document.getElementById('comment-modal');
+    if(modal) modal.style.display = 'flex'; 
     renderComments(); 
     updateCommentInputArea(); 
 };
 
 window.updateCommentInputArea = () => {
     const area = document.getElementById('comment-input-area');
+    if(!area) return;
     const t = uiTrans[currentLang];
     if(!currentUser) { 
         area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500">${t.noComment}</div>`; 
@@ -568,13 +582,14 @@ window.updateCommentInputArea = () => {
 
 window.renderComments = () => {
     const list = document.getElementById('comment-list');
+    if(!list) return;
     const allComs = comments[activeCommentPostId] || [];
     list.innerHTML = allComs.map(c => `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`).join('') || '<p class="text-center opacity-20">Empty</p>';
 };
 
 window.submitComment = async () => {
     const input = document.getElementById('comment-input');
-    if(!input.value.trim()) return;
+    if(!input || !input.value.trim()) return;
     const { error } = await _supabase.from('comments').insert([{
         post_id: activeCommentPostId,
         user_email: currentUser.email,
@@ -593,5 +608,5 @@ window.deletePost = async (id) => {
     } 
 };
 
-// Initialize the app
+// --- Initialization ---
 init();
