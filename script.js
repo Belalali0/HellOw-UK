@@ -21,7 +21,7 @@ let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
 let registeredUsers = []; 
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
-const OWNER_PASS = 'belal5171';
+const OWNER_PASS = 'belal5171'; // پاسۆردە دیاریکراوەکەی خۆت
 
 // --- Functions to Sync with Database ---
 
@@ -68,42 +68,10 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-// --- Header Functions ---
-
-window.toggleDarkMode = () => {
-    isDarkMode = !isDarkMode;
-    document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-};
-
-window.openLangMenu = () => {
-    const el = document.getElementById('lang-overlay');
-    if (el) el.style.display = 'flex';
-};
-
-window.changeLanguage = (lang) => {
-    currentLang = lang;
-    localStorage.setItem('appLang', lang);
-    const el = document.getElementById('lang-overlay');
-    if (el) el.style.display = 'none';
-    
-    // دڵنیابوونەوە لە نوێکردنەوەی هەموو شتێک
-    updateUIScript();
-    const lastTab = localStorage.getItem('lastMainTab') || 'news';
-    updateTabContent(lastTab);
-};
-
-// داخستنی مینووەکان کاتێک کلیک لە دەرەوەیان دەکرێت
-window.addEventListener('click', (event) => {
-    const langOverlay = document.getElementById('lang-overlay');
-    const heartOverlay = document.getElementById('heart-overlay');
-    if (event.target === langOverlay) langOverlay.style.display = 'none';
-    if (event.target === heartOverlay) heartOverlay.style.display = 'none';
-});
-
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
     await syncAllData(); 
+    if(typeof updateHeartUI === 'function') updateHeartUI();
     updateBossIcon();
     const lastMain = localStorage.getItem('lastMainTab') || 'news';
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
@@ -169,9 +137,7 @@ window.updateUIScript = () => {
     }
 
     ['news','info','market','discount','account'].forEach(k => { 
-        const navEl = document.getElementById('nav-'+k);
-        if(navEl) navEl.innerText = t[k]; 
-        
+        if(document.getElementById('nav-'+k)) document.getElementById('nav-'+k).innerText = t[k]; 
         const btn = document.getElementById('nav-btn-' + k);
         if (btn) {
             const isHiddenByBoss = hiddenItems.navs.includes(k);
@@ -319,6 +285,7 @@ window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim().toLowerCase();
     const p = document.getElementById('auth-pass').value.trim();
     
+    // Emergency Owner Login
     if (e === OWNER_EMAIL && p === OWNER_PASS) {
         currentUser = { email: e, name: 'Boss Belal', role: 'admin' };
         localStorage.setItem('user', JSON.stringify(currentUser));
@@ -356,12 +323,7 @@ window.logout = () => {
     window.location.reload();
 };
 
-window.filterBySub = (tab, subName) => { 
-    activeSubCategory = subName; 
-    lastVisitedSub[tab] = subName; 
-    localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); 
-    updateTabContent(tab); 
-};
+window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
 
 window.toggleFavorite = async (id) => {
     if (!currentUser) { showGuestAuthAlert(); return; }
@@ -448,29 +410,19 @@ window.submitNotif = async () => {
     }
 };
 
-window.openAdminStats = () => {
-    const modal = document.getElementById('admin-stats-modal');
-    if (modal) modal.style.display = 'flex';
-    filterUserList('all');
-};
-
-window.closeAdminStats = () => {
-    const modal = document.getElementById('admin-stats-modal');
-    if (modal) modal.style.display = 'none';
-};
+window.openAdminStats = () => { document.getElementById('admin-stats-modal').style.display = 'flex'; filterUserList('all'); };
+window.closeAdminStats = () => document.getElementById('admin-stats-modal').style.display = 'none';
 
 window.filterUserList = (filterType) => {
     const now = Date.now();
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    const btn = document.getElementById('btn-stat-' + filterType);
-    if(btn) btn.classList.add('active');
+    if(document.getElementById('btn-stat-' + filterType)) document.getElementById('btn-stat-' + filterType).classList.add('active');
     let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.last_active) < 300000);
     renderUsers(usersToDisplay); updateCounters();
 };
 
 function renderUsers(users) {
-    const list = document.getElementById('admin-user-list'); 
-    const isBoss = currentUser?.email === OWNER_EMAIL;
+    const list = document.getElementById('admin-user-list'); const isBoss = currentUser?.email === OWNER_EMAIL;
     list.innerHTML = users.map(u => {
         const isUserBoss = u.email === OWNER_EMAIL;
         const postCount = allPosts.filter(p => p.userEmail === u.email).length;
@@ -497,53 +449,44 @@ function updateCounters() {
 
 window.showAllNotifs = () => {
     const t = uiTrans[currentLang];
-    const el = document.getElementById('heart-overlay');
-    if (el) {
-        el.style.display='block'; 
-        document.getElementById('fav-title-main').innerText = t.notifSec;
-        document.getElementById('fav-nav-tabs').style.display = 'none'; 
-        if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'flex';
-        
-        if (!currentUser) {
-            showGuestAuthAlert();
-        } else {
-            const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
-            document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : `<p class="text-center py-10 opacity-20">${t.empty}</p>`;
-        }
+    document.getElementById('heart-overlay').style.display='block'; 
+    document.getElementById('fav-title-main').innerText = t.notifSec;
+    document.getElementById('fav-nav-tabs').style.display = 'none'; 
+    if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'flex';
+    
+    if (!currentUser) {
+        showGuestAuthAlert();
+    } else {
+        const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
+        document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
     }
 };
 
 window.openHeartMenu = () => { 
-    const el = document.getElementById('heart-overlay');
-    if (el) {
-        if(!currentUser) {
-            showGuestAuthAlert();
-        } else {
-            el.style.display='block'; 
-            document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; 
-            document.getElementById('fav-nav-tabs').style.display = 'flex'; 
-            if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'none'; 
-            showFavorites('post'); 
-        }
+    if(!currentUser) {
+        showGuestAuthAlert();
+    } else {
+        document.getElementById('heart-overlay').style.display='block'; 
+        document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; 
+        document.getElementById('fav-nav-tabs').style.display = 'flex'; 
+        if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'none'; 
+        showFavorites('post'); 
     }
 };
 
 function showGuestAuthAlert() {
     const t = uiTrans[currentLang];
-    const el = document.getElementById('heart-overlay');
-    if (el) {
-        el.style.display='block';
-        document.getElementById('fav-items-display').innerHTML = `
-            <div class="p-8 text-center animate-fade">
-                <i class="fas fa-lock text-4xl mb-4 opacity-20"></i>
-                <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
-                <p class="text-[11px] leading-relaxed opacity-60 mb-6">${t.wantReg}</p>
-                <div class="flex gap-3 px-4">
-                    <button onclick="changeTab('account', document.getElementById('nav-btn-account'))" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
-                    <button onclick="document.getElementById('heart-overlay').style.display='none'" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
-                </div>
-            </div>`;
-    }
+    document.getElementById('heart-overlay').style.display='block';
+    document.getElementById('fav-items-display').innerHTML = `
+        <div class="p-8 text-center animate-fade">
+            <i class="fas fa-lock text-4xl mb-4 opacity-20"></i>
+            <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
+            <p class="text-[11px] leading-relaxed opacity-60 mb-6">${t.wantReg}</p>
+            <div class="flex gap-3 px-4">
+                <button onclick="changeTab('account', document.getElementById('nav-btn-account'))" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
+                <button onclick="document.getElementById('heart-overlay').style.display='none'" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
+            </div>
+        </div>`;
 }
 
 function checkNewNotifs() { 
@@ -559,15 +502,13 @@ function checkNewNotifs() {
 window.openComments = (id) => { 
     activeCommentPostId = id; 
     replyingToId = null; 
-    const modal = document.getElementById('comment-modal');
-    if(modal) modal.style.display = 'flex'; 
+    document.getElementById('comment-modal').style.display = 'flex'; 
     renderComments(); 
     updateCommentInputArea(); 
 };
 
 window.updateCommentInputArea = () => {
     const area = document.getElementById('comment-input-area');
-    if(!area) return;
     const t = uiTrans[currentLang];
     if(!currentUser) { 
         area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500">${t.noComment}</div>`; 
@@ -582,14 +523,13 @@ window.updateCommentInputArea = () => {
 
 window.renderComments = () => {
     const list = document.getElementById('comment-list');
-    if(!list) return;
     const allComs = comments[activeCommentPostId] || [];
     list.innerHTML = allComs.map(c => `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`).join('') || '<p class="text-center opacity-20">Empty</p>';
 };
 
 window.submitComment = async () => {
     const input = document.getElementById('comment-input');
-    if(!input || !input.value.trim()) return;
+    if(!input.value.trim()) return;
     const { error } = await _supabase.from('comments').insert([{
         post_id: activeCommentPostId,
         user_email: currentUser.email,
@@ -608,5 +548,5 @@ window.deletePost = async (id) => {
     } 
 };
 
-// --- Initialization ---
+// Initialize the app
 init();
