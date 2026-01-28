@@ -86,20 +86,28 @@ window.changeLanguage = (lang) => {
     localStorage.setItem('appLang', lang);
     const el = document.getElementById('lang-overlay');
     if (el) el.style.display = 'none';
-    
-    // دڵنیابوونەوە لە نوێکردنەوەی هەموو شتێک
     updateUIScript();
-    const lastTab = localStorage.getItem('lastMainTab') || 'news';
-    updateTabContent(lastTab);
+    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
 };
 
-// داخستنی مینووەکان کاتێک کلیک لە دەرەوەیان دەکرێت
 window.addEventListener('click', (event) => {
     const langOverlay = document.getElementById('lang-overlay');
     const heartOverlay = document.getElementById('heart-overlay');
     if (event.target === langOverlay) langOverlay.style.display = 'none';
     if (event.target === heartOverlay) heartOverlay.style.display = 'none';
 });
+
+// چاککردنی کاتی پۆست
+function timeAgo(ts) {
+    const seconds = Math.floor((Date.now() - ts) / 1000);
+    const t = uiTrans[currentLang];
+    if (seconds < 60) return t.now;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + "m " + t.ago;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "h " + t.ago;
+    return Math.floor(hours / 24) + "d " + t.ago;
+}
 
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
@@ -109,11 +117,24 @@ async function init() {
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
     if(activeBtn) changeTab(lastMain, activeBtn);
     checkNewNotifs();
+    
+    // کاتێک کلیک لە ناوی وێبسایتەکە دەکرێت (ئەگەر ئۆنەر بێت داشبۆرد دەکاتەوە)
+    const brandName = document.getElementById('brand-name');
+    if(brandName) {
+        brandName.onclick = () => {
+            if(currentUser && currentUser.email === OWNER_EMAIL) {
+                openAdminStats();
+            }
+        };
+    }
 }
 
 function updateBossIcon() {
     const bossIcon = document.getElementById('boss-admin-icon');
-    if (bossIcon) bossIcon.style.display = (currentUser && currentUser.email === OWNER_EMAIL) ? 'block' : 'none';
+    if (bossIcon) {
+        bossIcon.style.display = (currentUser && currentUser.email === OWNER_EMAIL) ? 'block' : 'none';
+        bossIcon.onclick = openAdminStats;
+    }
 }
 
 window.toggleHideItem = (type, value, event) => {
@@ -158,7 +179,7 @@ window.updateUIScript = () => {
             const langName = l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'));
             if (isBoss) {
                 return `<div class="flex items-center justify-between w-full bg-white/5 rounded-xl p-1 mb-2">
-                    <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1">${langName}</button>
+                    <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1 text-xs">${langName}</button>
                     ${getHideBtn('langs', l)}
                 </div>`;
             } else if (hasPosts && !isHiddenByBoss) {
@@ -196,6 +217,8 @@ window.updateTabContent = (tab) => {
     const display = document.getElementById('content-display');
     const subNav = document.getElementById('sub-nav-container');
     const subBar = document.getElementById('sub-nav-bar');
+    if(!display) return;
+    
     const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
 
     if (['info', 'market', 'discount'].includes(tab)) {
@@ -206,22 +229,24 @@ window.updateTabContent = (tab) => {
         });
 
         if (availableSubs.length > 0) {
-            subNav.style.display = 'block';
+            if(subNav) subNav.style.display = 'block';
             if (!activeSubCategory || !availableSubs.includes(activeSubCategory)) {
                 activeSubCategory = availableSubs[0];
             }
-            subBar.innerHTML = availableSubs.map(item => `
-                <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''} flex items-center justify-center gap-2" 
-                onclick="filterBySub('${tab}', '${item}')">
-                    ${item} ${getHideBtn('factions', item)}
-                </button>
-            `).join('');
+            if(subBar) {
+                subBar.innerHTML = availableSubs.map(item => `
+                    <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''} flex items-center justify-center gap-2" 
+                    onclick="filterBySub('${tab}', '${item}')">
+                        ${item} ${getHideBtn('factions', item)}
+                    </button>
+                `).join('');
+            }
         } else {
-            subNav.style.display = 'none';
+            if(subNav) subNav.style.display = 'none';
             activeSubCategory = null;
         }
     } else { 
-        subNav.style.display = 'none'; 
+        if(subNav) subNav.style.display = 'none'; 
     }
 
     if (tab === 'account') { 
@@ -246,7 +271,7 @@ window.renderPostHTML = (p) => {
     const t = uiTrans[currentLang];
     
     const isLiked = currentUser && userFavorites[currentUser.email] && userFavorites[currentUser.email].some(f => f.id === p.id);
-    const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
+    const mediaHTML = p.media ? `<img src="${p.media}" class="post-media" loading="lazy">` : '';
     
     let expiryHTML = '';
     if (p.expiry_date === 'never' || !p.expiry_date) {
@@ -260,36 +285,36 @@ window.renderPostHTML = (p) => {
         else if (p.category === 'discount') { expiryHTML = `<div class="flex flex-col items-end gap-1">${timeLeftLine}</div>`; }
     }
 
-    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.admin_name || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
+    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end mt-1"><span class="admin-name-tag">By: ${p.admin_name || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
     const commentCount = (comments[p.id] || []).length;
     
     const linkBtnHTML = p.post_link ? `
         <a href="${p.post_link.startsWith('http') ? p.post_link : 'https://' + p.post_link}" target="_blank" 
-           class="flex items-center justify-center w-9 h-9 bg-blue-500/20 rounded-full text-blue-400 hover:scale-110 transition-transform">
-            <i class="fas fa-link text-sm"></i>
+           class="flex items-center justify-center w-8 h-8 bg-blue-500/20 rounded-full text-blue-400">
+            <i class="fas fa-link text-xs"></i>
         </a>` : '';
 
     return `
     <div class="post-card animate-fade">
         ${mediaHTML}
         <div class="post-body">
-            <div class="flex justify-between items-start mb-1">
-                <span class="text-[10px] opacity-40 mb-2">${typeof timeAgo === "function" ? timeAgo(p.id) : ""}</span>
+            <div class="flex justify-between items-start mb-2">
+                <span class="text-[10px] opacity-40">${timeAgo(p.id)}</span>
                 <div class="flex gap-3 items-center">
                     ${linkBtnHTML}
                     ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
                 </div>
             </div>
-            ${p.title ? `<div class="glass-title"><h3 class="font-bold text-lg">${p.title}</h3></div>` : ''}
-            ${p.desc ? `<p class="text-sm opacity-70 mb-4 px-2">${p.desc}</p>` : ''}
+            ${p.title ? `<div class="glass-title"><h3 class="font-bold text-md">${p.title}</h3></div>` : ''}
+            ${p.desc ? `<p class="text-sm opacity-70 mb-4">${p.desc}</p>` : ''}
             <div class="flex justify-between items-end border-t border-white/5 pt-3">
                 <div class="flex gap-6">
-                    <button id="like-btn-${p.id}" onclick="toggleFavorite(${p.id})" class="flex items-center gap-2">
-                        <i class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart opacity-50'} text-xl transition-all duration-300"></i>
-                        <span id="like-count-${p.id}">${likeCounts[p.id] || 0}</span>
+                    <button onclick="toggleFavorite(${p.id})" class="flex items-center gap-2">
+                        <i class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart opacity-50'} text-lg"></i>
+                        <span class="text-xs">${likeCounts[p.id] || 0}</span>
                     </button>
                     <button onclick="openComments(${p.id})" class="flex items-center gap-2 opacity-60">
-                        <i class="far fa-comment-dots text-xl"></i><span>${commentCount}</span>
+                        <i class="far fa-comment-dots text-lg"></i><span class="text-xs">${commentCount}</span>
                     </button>
                 </div>
                 <div class="flex flex-col items-end">
@@ -326,7 +351,7 @@ window.handleLogin = async () => {
         return;
     }
 
-    const { data: user, error } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
+    const { data: user } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
     if (user) { 
         currentUser = user; 
         localStorage.setItem('user', JSON.stringify(currentUser)); 
@@ -377,7 +402,8 @@ window.toggleFavorite = async (id) => {
 };
 
 window.showFavorites = (type) => {
-    currentFavTab = type; document.querySelectorAll('.fav-nav-btn').forEach(b => b.classList.remove('active'));
+    currentFavTab = type;
+    document.querySelectorAll('.fav-nav-btn').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById(type === 'post' ? 'btn-fav-post' : 'btn-fav-notif');
     if(btn) btn.classList.add('active');
     
@@ -388,18 +414,21 @@ window.showFavorites = (type) => {
     
     let likedItems = [];
     if (type === 'post') {
-        likedItems = allPosts.filter(p => p.category !== 'notif' && (likeCounts[p.id] > 0));
+        likedItems = allPosts.filter(p => p.category !== 'notif' && likeCounts[p.id] > 0);
     } else {
-        likedItems = allPosts.filter(p => p.category === 'notif' && (likeCounts[p.id] > 0));
+        likedItems = allPosts.filter(p => p.category === 'notif' && likeCounts[p.id] > 0);
     }
     
-    document.getElementById('fav-items-display').innerHTML = likedItems.length ? likedItems.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    const display = document.getElementById('fav-items-display');
+    if(display) {
+        display.innerHTML = likedItems.length ? likedItems.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    }
 };
 
 window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
-    const postLink = document.getElementById('post-external-link') ? document.getElementById('post-external-link').value.trim() : "";
+    const postLink = document.getElementById('post-external-link')?.value.trim() || "";
     const cat = document.getElementById('post-category').value; 
     const durSelect = document.getElementById('post-duration');
     const duration = durSelect.value; 
@@ -430,7 +459,7 @@ window.submitPost = async () => {
     
     const { error } = await _supabase.from('posts').insert([newPost]);
     if(!error) {
-        if(typeof closePostModal === "function") closePostModal(); 
+        if(window.closePostModal) window.closePostModal(); 
         await syncAllData();
     }
 };
@@ -443,7 +472,7 @@ window.submitNotif = async () => {
         title, desc, lang, category: 'notif', admin_name: currentUser?.name || "Admin", user_email: currentUser?.email
     }]);
     if(!error) {
-        if(typeof closeNotifModal === "function") closeNotifModal(); 
+        if(window.closeNotifModal) window.closeNotifModal(); 
         await syncAllData();
     }
 };
@@ -465,15 +494,17 @@ window.filterUserList = (filterType) => {
     const btn = document.getElementById('btn-stat-' + filterType);
     if(btn) btn.classList.add('active');
     let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.last_active) < 300000);
-    renderUsers(usersToDisplay); updateCounters();
+    renderUsers(usersToDisplay); 
+    updateCounters();
 };
 
 function renderUsers(users) {
     const list = document.getElementById('admin-user-list'); 
+    if(!list) return;
     const isBoss = currentUser?.email === OWNER_EMAIL;
     list.innerHTML = users.map(u => {
         const isUserBoss = u.email === OWNER_EMAIL;
-        const postCount = allPosts.filter(p => p.userEmail === u.email).length;
+        const postCount = allPosts.filter(p => p.user_email === u.email).length;
         const roleLabel = isUserBoss ? "BOSS" : (u.role === "admin" ? "ADMIN" : "USER");
         const roleColor = isUserBoss ? "bg-yellow-500/30 border-yellow-500/50" : (u.role === "admin" ? "bg-red-500/30 border-red-500/50" : "bg-blue-500/20 border-blue-500/30");
         return `<div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade"><div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${(Date.now() - u.last_active) < 300000 ? 'bg-green-500' : 'bg-gray-500'}"></div><div><div class="flex items-center gap-2"><span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span><span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span></div><span class="text-[10px] opacity-40 italic d-block">${u.email}</span><div class="text-[10px] text-green-400 mt-1 font-bold">Posts: ${postCount}</div></div></div>${isBoss && !isUserBoss ? `<button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border backdrop-blur-lg">${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}</button>` : ''}</div>`;
@@ -500,15 +531,20 @@ window.showAllNotifs = () => {
     const el = document.getElementById('heart-overlay');
     if (el) {
         el.style.display='block'; 
-        document.getElementById('fav-title-main').innerText = t.notifSec;
-        document.getElementById('fav-nav-tabs').style.display = 'none'; 
-        if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'flex';
+        const title = document.getElementById('fav-title-main');
+        if(title) title.innerText = t.notifSec;
+        const navTabs = document.getElementById('fav-nav-tabs');
+        if(navTabs) navTabs.style.display = 'none'; 
+        
+        const toggleBtn = document.getElementById('notif-toggle-btn');
+        if(toggleBtn) toggleBtn.style.display = 'flex';
         
         if (!currentUser) {
             showGuestAuthAlert();
         } else {
             const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
-            document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : `<p class="text-center py-10 opacity-20">${t.empty}</p>`;
+            const display = document.getElementById('fav-items-display');
+            if(display) display.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : `<p class="text-center py-10 opacity-20">${t.empty}</p>`;
         }
     }
 };
@@ -520,9 +556,12 @@ window.openHeartMenu = () => {
             showGuestAuthAlert();
         } else {
             el.style.display='block'; 
-            document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; 
-            document.getElementById('fav-nav-tabs').style.display = 'flex'; 
-            if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'none'; 
+            const title = document.getElementById('fav-title-main');
+            if(title) title.innerText = uiTrans[currentLang].fav; 
+            const navTabs = document.getElementById('fav-nav-tabs');
+            if(navTabs) navTabs.style.display = 'flex'; 
+            const toggleBtn = document.getElementById('notif-toggle-btn');
+            if(toggleBtn) toggleBtn.style.display = 'none'; 
             showFavorites('post'); 
         }
     }
@@ -530,10 +569,9 @@ window.openHeartMenu = () => {
 
 function showGuestAuthAlert() {
     const t = uiTrans[currentLang];
-    const el = document.getElementById('heart-overlay');
-    if (el) {
-        el.style.display='block';
-        document.getElementById('fav-items-display').innerHTML = `
+    const display = document.getElementById('fav-items-display');
+    if (display) {
+        display.innerHTML = `
             <div class="p-8 text-center animate-fade">
                 <i class="fas fa-lock text-4xl mb-4 opacity-20"></i>
                 <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
@@ -551,7 +589,7 @@ function checkNewNotifs() {
     const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); 
     const newOnes = allPosts.filter(p => p.category === 'notif' && p.id > lastSeen && p.lang === currentLang); 
     if(newOnes.length > 0) { 
-        if(typeof fireToast === "function") fireToast(newOnes[0].title, newOnes[0].desc); 
+        if(window.fireToast) window.fireToast(newOnes[0].title, newOnes[0].desc); 
         localStorage.setItem('lastNotifSeen', Date.now().toString()); 
     } 
 }
@@ -576,7 +614,7 @@ window.updateCommentInputArea = () => {
     area.innerHTML = `
         <div class="flex gap-2 p-2">
             <input id="comment-input" type="text" class="auth-input flex-1 !mb-0" placeholder="Write...">
-            <button onclick="submitComment()" class="p-4 bg-green-500 rounded-xl"><i class="fas fa-paper-plane text-black"></i></button>
+            <button onclick="submitComment()" class="p-3 bg-green-500 rounded-xl"><i class="fas fa-paper-plane text-black"></i></button>
         </div>`;
 };
 
@@ -589,11 +627,11 @@ window.renderComments = () => {
 
 window.submitComment = async () => {
     const input = document.getElementById('comment-input');
-    if(!input || !input.value.trim()) return;
+    if(!input || !input.value.trim() || !currentUser) return;
     const { error } = await _supabase.from('comments').insert([{
         post_id: activeCommentPostId,
         user_email: currentUser.email,
-        user_name: currentUser.name,
+        user_name: currentUser.name || currentUser.email.split('@')[0],
         text: input.value
     }]);
     if(!error) {
