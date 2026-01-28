@@ -1,8 +1,14 @@
+// --- Supabase Configuration ---
+// تێبینی: لێرە URL و API Key ی خۆت دابنێ کە لە ناو سایتی Supabase وەرتگرتووە
+const supabaseUrl = 'YOUR_SUPABASE_URL'https://yqjfdtrjngwaoeygeiqh.supabase.co;
+const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'sb_publishable_kR58sr2ch1wun_WmJqmetw_ailryRxc;
+const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+
 // --- Variables & State ---
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
 let currentLang = localStorage.getItem('appLang') || 'ku';
 let isDarkMode = localStorage.getItem('theme') !== 'light';
-let allPosts = JSON.parse(localStorage.getItem('allPosts')) || [];
+let allPosts = []; // ئێستا پۆستەکان لە سێرڤەرەوە دێن
 let userFavorites = JSON.parse(localStorage.getItem('userFavorites')) || {}; 
 let comments = JSON.parse(localStorage.getItem('postComments')) || {};
 let likeCounts = JSON.parse(localStorage.getItem('likeCounts')) || {};
@@ -17,6 +23,48 @@ let activeSubCategory = null;
 let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
+
+// --- Functions ---
+
+async function init() {
+    ensureOwnerAccount();
+    document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    
+    // هێنانەوەی پۆستەکان لە سێرڤەرەوە بۆ ئەوەی لای هەمووان دیار بێت
+    await fetchPostsFromSupabase();
+    
+    updateUIScript();
+    updateHeartUI();
+    updateBossIcon();
+    const lastMain = localStorage.getItem('lastMainTab') || 'news';
+    const activeBtn = document.getElementById('nav-btn-' + lastMain);
+    changeTab(lastMain, activeBtn);
+    checkNewNotifs();
+    updateNotifToggleUI();
+    trackUserActivity();
+}
+
+async function fetchPostsFromSupabase() {
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (error) throw error;
+        if (data) {
+            allPosts = data;
+            // پاککردنەوەی پۆستە بەسەرچووەکان لێرە ئەنجام دەدرێت
+            const now = Date.now();
+            allPosts = allPosts.filter(p => (!p.expiryDate || p.expiryDate === "never" || p.expiryDate === 0) ? true : now < p.expiryDate);
+            updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+        }
+    } catch (err) {
+        console.error("Error fetching posts:", err.message);
+        // ئەگەر ئینتەرنێت نەبوو، سوود لە LocalStorage وەردەگرین بۆ پیشاندان
+        allPosts = JSON.parse(localStorage.getItem('allPosts')) || [];
+    }
+}
 
 function ensureOwnerAccount() {
     const ownerIdx = registeredUsers.findIndex(u => u.email === OWNER_EMAIL);
@@ -42,21 +90,6 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-function init() {
-    ensureOwnerAccount();
-    document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    cleanExpiredPosts();
-    updateUIScript();
-    updateHeartUI();
-    updateBossIcon();
-    const lastMain = localStorage.getItem('lastMainTab') || 'news';
-    const activeBtn = document.getElementById('nav-btn-' + lastMain);
-    changeTab(lastMain, activeBtn);
-    checkNewNotifs();
-    updateNotifToggleUI();
-    trackUserActivity();
-}
-
 function updateBossIcon() {
     const bossIcon = document.getElementById('boss-admin-icon');
     if (bossIcon) bossIcon.style.display = (currentUser && currentUser.email === OWNER_EMAIL) ? 'block' : 'none';
@@ -79,12 +112,6 @@ function getHideBtn(type, value) {
     const isHidden = hiddenItems[type].includes(value);
     return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer pointer-events-auto" 
                onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
-}
-
-function cleanExpiredPosts() {
-    const now = Date.now();
-    allPosts = allPosts.filter(p => (!p.expiryDate || p.expiryDate === "never") ? true : now < p.expiryDate);
-    localStorage.setItem('allPosts', JSON.stringify(allPosts));
 }
 
 window.changeTab = (tab, el) => { 
@@ -185,7 +212,6 @@ window.updateTabContent = (tab) => {
         if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
             filtered = filtered.filter(p => p.subCategory === activeSubCategory);
         }
-        filtered.sort((a,b)=>b.id-a.id);
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
     }
 };
@@ -203,7 +229,7 @@ window.renderPostHTML = (p) => {
     const t = uiTrans[currentLang];
     
     let expiryHTML = '';
-    if (p.expiryDate === 'never' || !p.expiryDate) {
+    if (p.expiryDate === 'never' || !p.expiryDate || p.expiryDate === 0) {
         if (isAdmin) expiryHTML = `<span class="expiry-tag"><i class="far fa-clock"></i> NEVER</span>`;
     } else {
         const diff = p.expiryDate - Date.now();
@@ -330,7 +356,7 @@ window.showFavorites = (type) => {
     if(favDisplay) favDisplay.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
 
-window.submitPost = () => {
+window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
     const postLink = document.getElementById('post-external-link')?.value.trim() || "";
@@ -343,7 +369,7 @@ window.submitPost = () => {
     
     if(!title && !desc && !tempMedia.url) return;
     
-    let expiryDate = "never"; 
+    let expiryDate = 0; 
     if (duration !== "never") { 
         const units = { '1w': 7, '2w': 14, '3w': 21, '1m': 30, '2m': 60, '3m': 90 }; 
         expiryDate = Date.now() + (units[duration] * 86400000); 
@@ -352,28 +378,48 @@ window.submitPost = () => {
     const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
     const userEmail = currentUser ? currentUser.email : "system";
     
-    allPosts.push({ 
+    const newPost = { 
         id: Date.now(), title, desc, postLink, adminName, userEmail, 
         lang: document.getElementById('post-lang').value, 
         category: cat, subCategory: subCategory, 
         expiryDate, durationLabel, media: tempMedia.url 
-    }); 
-    
-    localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
-    tempMedia = { url: "", type: "" };
-    closePostModal(); 
-    init(); 
+    };
+
+    // ناردنی پۆستەکە بۆ سێرڤەری Supabase
+    try {
+        const { error } = await supabase.from('posts').insert([newPost]);
+        if (error) throw error;
+        
+        tempMedia = { url: "", type: "" };
+        closePostModal(); 
+        await fetchPostsFromSupabase(); // نوێکردنەوەی پۆستەکان بۆ هەمووان
+    } catch (err) {
+        alert("Error saving post online: " + err.message);
+    }
 };
 
-window.submitNotif = () => {
+window.submitNotif = async () => {
     const title = document.getElementById('notif-title').value; 
     const desc = document.getElementById('notif-desc').value;
     const lang = document.getElementById('notif-lang').value; 
     if(!title && !desc) return;
-    allPosts.push({ id: Date.now(), title, desc, adminName: (currentUser?.name || "Admin"), userEmail: currentUser?.email || "system", lang, category: 'notif', media: "", expiryDate: "never", durationLabel: "Never" });
-    localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
-    closeNotifModal(); 
-    init();
+
+    const newNotif = { 
+        id: Date.now(), title, desc, 
+        adminName: (currentUser?.name || "Admin"), 
+        userEmail: currentUser?.email || "system", 
+        lang, category: 'notif', media: "", 
+        expiryDate: 0, durationLabel: "Never" 
+    };
+
+    try {
+        const { error } = await supabase.from('posts').insert([newNotif]);
+        if (error) throw error;
+        closeNotifModal(); 
+        await fetchPostsFromSupabase();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
 };
 
 window.openAdminStats = () => { 
@@ -574,7 +620,19 @@ window.submitComment = () => {
 window.setReply = (id) => { replyingToId = id; updateCommentInputArea(); document.getElementById('comment-input')?.focus(); };
 window.cancelReply = () => { replyingToId = null; updateCommentInputArea(); };
 window.deleteComment = (comId) => { if(!confirm("Delete?")) return; comments[activeCommentPostId] = comments[activeCommentPostId].filter(c => c.id !== comId && c.parentId !== comId); localStorage.setItem('postComments', JSON.stringify(comments)); renderComments(); updateTabContent(localStorage.getItem('lastMainTab')); };
-window.deletePost = (id) => { if(confirm('Delete?')) { allPosts = allPosts.filter(x => x.id !== id); localStorage.setItem('allPosts', JSON.stringify(allPosts)); init(); } };
+
+window.deletePost = async (id) => { 
+    if(confirm('Delete?')) { 
+        try {
+            const { error } = await supabase.from('posts').delete().eq('id', id);
+            if (error) throw error;
+            await fetchPostsFromSupabase();
+        } catch (err) {
+            alert("Delete error: " + err.message);
+        }
+    } 
+};
+
 window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
 window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
 window.toggleDarkMode = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
@@ -586,12 +644,11 @@ window.openPostModal = () => {
     const el = document.getElementById('post-modal'); 
     if(el) {
         el.style.display = 'flex';
-        // لێرەدا ئۆتۆماتیکی سەیری ئەو بەشە دەکات کە لێیەتی تا فاکشنەکان پیشان بدات
         const currentTab = localStorage.getItem('lastMainTab') || 'news';
         const postCatSelect = document.getElementById('post-category');
         if(postCatSelect) {
             postCatSelect.value = currentTab;
-            window.updateSubSelect(currentTab); // بانگکردنی فەنکشنەکە بۆ پیشاندانی فاکشنەکان
+            window.updateSubSelect(currentTab);
         }
     }
 };
