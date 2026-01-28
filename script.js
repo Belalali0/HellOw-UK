@@ -1,8 +1,14 @@
+// --- Supabase Configuration ---
+// لێرە زانیارییەکانی پڕۆژەکەت لە Supabase دابنێ
+const SUPABASE_URL = 'https://yqjfdtrjngwaoeygeiqh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_kR58sr2ch1wun_WmJqmetw_ailryRxc';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // --- Variables & State ---
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
 let currentLang = localStorage.getItem('appLang') || 'ku';
 let isDarkMode = localStorage.getItem('theme') !== 'light';
-let allPosts = JSON.parse(localStorage.getItem('allPosts')) || [];
+let allPosts = []; // ئێستا پۆستەکان لە سێرڤەرەوە دێن نەک لۆکاڵ
 let userFavorites = JSON.parse(localStorage.getItem('userFavorites')) || {}; 
 let comments = JSON.parse(localStorage.getItem('postComments')) || {};
 let likeCounts = JSON.parse(localStorage.getItem('likeCounts')) || {};
@@ -17,6 +23,29 @@ let activeSubCategory = null;
 let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
+
+async function init() {
+    ensureOwnerAccount();
+    document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    await fetchPostsFromServer(); // هێنانەوه‌ی پۆستەکان لە سێرڤەرەوە
+    updateUIScript();
+    updateHeartUI();
+    updateBossIcon();
+    const lastMain = localStorage.getItem('lastMainTab') || 'news';
+    const activeBtn = document.getElementById('nav-btn-' + lastMain);
+    changeTab(lastMain, activeBtn);
+    checkNewNotifs();
+    updateNotifToggleUI();
+    trackUserActivity();
+}
+
+async function fetchPostsFromServer() {
+    const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
+    if (!error) {
+        allPosts = data;
+        cleanExpiredPostsLocally();
+    }
+}
 
 function ensureOwnerAccount() {
     const ownerIdx = registeredUsers.findIndex(u => u.email === OWNER_EMAIL);
@@ -42,21 +71,6 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-function init() {
-    ensureOwnerAccount();
-    document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    cleanExpiredPosts();
-    updateUIScript();
-    updateHeartUI();
-    updateBossIcon();
-    const lastMain = localStorage.getItem('lastMainTab') || 'news';
-    const activeBtn = document.getElementById('nav-btn-' + lastMain);
-    changeTab(lastMain, activeBtn);
-    checkNewNotifs();
-    updateNotifToggleUI();
-    trackUserActivity();
-}
-
 function updateBossIcon() {
     const bossIcon = document.getElementById('boss-admin-icon');
     if (bossIcon) bossIcon.style.display = (currentUser && currentUser.email === OWNER_EMAIL) ? 'block' : 'none';
@@ -81,10 +95,9 @@ function getHideBtn(type, value) {
                onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
 }
 
-function cleanExpiredPosts() {
+function cleanExpiredPostsLocally() {
     const now = Date.now();
     allPosts = allPosts.filter(p => (!p.expiryDate || p.expiryDate === "never") ? true : now < p.expiryDate);
-    localStorage.setItem('allPosts', JSON.stringify(allPosts));
 }
 
 window.changeTab = (tab, el) => { 
@@ -330,7 +343,7 @@ window.showFavorites = (type) => {
     if(favDisplay) favDisplay.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
 
-window.submitPost = () => {
+window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
     const postLink = document.getElementById('post-external-link')?.value.trim() || "";
@@ -350,28 +363,42 @@ window.submitPost = () => {
     const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
     const userEmail = currentUser ? currentUser.email : "system";
     
-    allPosts.push({ 
+    const newPost = { 
         id: Date.now(), title, desc, postLink, adminName, userEmail, 
         lang: document.getElementById('post-lang').value, 
         category: cat, subCategory: document.getElementById('post-sub-category').value, 
         expiryDate, durationLabel, media: tempMedia.url 
-    }); 
+    };
+
+    // ناردن بۆ سێرڤەر بۆ ئەوەی هەمووان بیبینن
+    const { error } = await supabase.from('posts').insert([newPost]);
     
-    localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
-    tempMedia = { url: "", type: "" };
-    closePostModal(); 
-    init(); 
+    if (!error) {
+        tempMedia = { url: "", type: "" };
+        closePostModal(); 
+        init(); 
+    } else {
+        alert("هەڵەیەک لە ناردن هەبوو: " + error.message);
+    }
 };
 
-window.submitNotif = () => {
+window.submitNotif = async () => {
     const title = document.getElementById('notif-title').value; 
     const desc = document.getElementById('notif-desc').value;
     const lang = document.getElementById('notif-lang').value; 
     if(!title && !desc) return;
-    allPosts.push({ id: Date.now(), title, desc, adminName: (currentUser?.name || "Admin"), userEmail: currentUser?.email || "system", lang, category: 'notif', media: "", expiryDate: "never", durationLabel: "Never" });
-    localStorage.setItem('allPosts', JSON.stringify(allPosts)); 
-    closeNotifModal(); 
-    init();
+    
+    const newNotif = { 
+        id: Date.now(), title, desc, adminName: (currentUser?.name || "Admin"), 
+        userEmail: currentUser?.email || "system", lang, category: 'notif', 
+        media: "", expiryDate: "never", durationLabel: "Never" 
+    };
+
+    const { error } = await supabase.from('posts').insert([newNotif]);
+    if (!error) {
+        closeNotifModal(); 
+        init();
+    }
 };
 
 window.openAdminStats = () => { 
@@ -572,10 +599,18 @@ window.submitComment = () => {
 window.setReply = (id) => { replyingToId = id; updateCommentInputArea(); document.getElementById('comment-input')?.focus(); };
 window.cancelReply = () => { replyingToId = null; updateCommentInputArea(); };
 window.deleteComment = (comId) => { if(!confirm("Delete?")) return; comments[activeCommentPostId] = comments[activeCommentPostId].filter(c => c.id !== comId && c.parentId !== comId); localStorage.setItem('postComments', JSON.stringify(comments)); renderComments(); updateTabContent(localStorage.getItem('lastMainTab')); };
-window.deletePost = (id) => { if(confirm('Delete?')) { allPosts = allPosts.filter(x => x.id !== id); localStorage.setItem('allPosts', JSON.stringify(allPosts)); init(); } };
+window.deletePost = async (id) => { 
+    if(confirm('Delete?')) { 
+        const { error } = await supabase.from('posts').delete().eq('id', id);
+        if (!error) {
+            allPosts = allPosts.filter(x => x.id !== id);
+            init(); 
+        }
+    } 
+};
 window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
 window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
-window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
+window.toggleDarkMode = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
 window.updateHeartUI = () => { const h = document.getElementById('main-heart'); if(h) h.className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
 window.closeLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'none'; };
 window.openLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'flex'; };
@@ -629,7 +664,7 @@ function timeAgo(d) {
     return Math.floor(s/2592000) + "mo " + t.ago;
 }
 
-function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); if(bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
+window.toggleAdminBar = () => { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); if(bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } };
 function closeAuthAlert() { const el = document.getElementById('auth-alert-modal'); if(el) el.style.display = 'none'; }
 function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getElementById('nav-btn-account')); }
 function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); }
