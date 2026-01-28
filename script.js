@@ -12,12 +12,8 @@ let userFavorites = JSON.parse(localStorage.getItem('userFavorites')) || {};
 let comments = {}; 
 let likeCounts = {}; 
 let hiddenItems = JSON.parse(localStorage.getItem('hiddenItems')) || { langs: [], navs: [], factions: [] };
-let notifOnScreen = localStorage.getItem('notifOnScreen') !== 'false';
 let tempMedia = { url: "", type: "" };
 let activeCommentPostId = null;
-let replyingToId = null;
-let currentFavTab = 'post';
-let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
 let registeredUsers = []; 
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
@@ -50,6 +46,10 @@ async function syncAllData() {
         const { data: usersData } = await _supabase.from('users').select('*');
         registeredUsers = usersData || [];
         
+        if (currentUser) {
+            await _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
+        }
+
         updateUIScript();
         updateTabContent(localStorage.getItem('lastMainTab') || 'news');
     } catch (e) { console.error("Sync Error:", e); }
@@ -68,37 +68,9 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-// --- Header Functions ---
+// --- Core Helper Functions ---
 
-window.toggleDarkMode = () => {
-    isDarkMode = !isDarkMode;
-    document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-};
-
-window.openLangMenu = () => {
-    const el = document.getElementById('lang-overlay');
-    if (el) el.style.display = 'flex';
-};
-
-window.changeLanguage = (lang) => {
-    currentLang = lang;
-    localStorage.setItem('appLang', lang);
-    const el = document.getElementById('lang-overlay');
-    if (el) el.style.display = 'none';
-    updateUIScript();
-    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
-};
-
-window.addEventListener('click', (event) => {
-    const langOverlay = document.getElementById('lang-overlay');
-    const heartOverlay = document.getElementById('heart-overlay');
-    if (event.target === langOverlay) langOverlay.style.display = 'none';
-    if (event.target === heartOverlay) heartOverlay.style.display = 'none';
-});
-
-// چاککردنی کاتی پۆست
-function timeAgo(ts) {
+window.timeAgo = (ts) => {
     const seconds = Math.floor((Date.now() - ts) / 1000);
     const t = uiTrans[currentLang];
     if (seconds < 60) return t.now;
@@ -107,62 +79,38 @@ function timeAgo(ts) {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return hours + "h " + t.ago;
     return Math.floor(hours / 24) + "d " + t.ago;
+};
+
+function formatFullDate(ts) {
+    const d = new Date(ts);
+    return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
+
+// --- Initialization ---
 
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
     await syncAllData(); 
-    updateBossIcon();
+    
     const lastMain = localStorage.getItem('lastMainTab') || 'news';
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
     if(activeBtn) changeTab(lastMain, activeBtn);
+    
     checkNewNotifs();
     
-    // کاتێک کلیک لە ناوی وێبسایتەکە دەکرێت (ئەگەر ئۆنەر بێت داشبۆرد دەکاتەوە)
-    const brandName = document.getElementById('brand-name');
+    // Admin Toggle
+    const brandName = document.querySelector('.glass-logo');
     if(brandName) {
         brandName.onclick = () => {
+            const bar = document.getElementById('admin-quick-bar');
             if(currentUser && currentUser.email === OWNER_EMAIL) {
-                openAdminStats();
+                bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
             }
         };
     }
 }
 
-function updateBossIcon() {
-    const bossIcon = document.getElementById('boss-admin-icon');
-    if (bossIcon) {
-        bossIcon.style.display = (currentUser && currentUser.email === OWNER_EMAIL) ? 'block' : 'none';
-        bossIcon.onclick = openAdminStats;
-    }
-}
-
-window.toggleHideItem = (type, value, event) => {
-    if (event) event.stopPropagation();
-    if (hiddenItems[type].includes(value)) {
-        hiddenItems[type] = hiddenItems[type].filter(i => i !== value);
-    } else {
-        hiddenItems[type].push(value);
-    }
-    localStorage.setItem('hiddenItems', JSON.stringify(hiddenItems));
-    updateUIScript();
-    updateTabContent(localStorage.getItem('lastMainTab'));
-};
-
-function getHideBtn(type, value) {
-    if (!(currentUser && currentUser.email === OWNER_EMAIL)) return "";
-    const isHidden = hiddenItems[type].includes(value);
-    return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer pointer-events-auto" 
-               onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
-}
-
-window.changeTab = (tab, el) => { 
-    if(typeof closeHeartMenu === "function") closeHeartMenu(); 
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
-    if(el) el.classList.add('active'); 
-    localStorage.setItem('lastMainTab', tab);
-    updateTabContent(tab); 
-};
+// --- UI Updates ---
 
 window.updateUIScript = () => { 
     const t = uiTrans[currentLang]; 
@@ -170,25 +118,8 @@ window.updateUIScript = () => {
     if(activeCodeEl) activeCodeEl.innerText = currentLang.toUpperCase(); 
 
     const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
-    const langOverlay = document.querySelector('#lang-overlay .lang-grid');
-    if (langOverlay) {
-        const langs = ['ku', 'en', 'ar', 'fa'];
-        langOverlay.innerHTML = langs.map(l => {
-            const hasPosts = allPosts.some(p => p.lang === l);
-            const isHiddenByBoss = hiddenItems.langs.includes(l);
-            const langName = l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'));
-            if (isBoss) {
-                return `<div class="flex items-center justify-between w-full bg-white/5 rounded-xl p-1 mb-2">
-                    <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1 text-xs">${langName}</button>
-                    ${getHideBtn('langs', l)}
-                </div>`;
-            } else if (hasPosts && !isHiddenByBoss) {
-                return `<button onclick="changeLanguage('${l}')" class="lang-btn-glass">${langName}</button>`;
-            }
-            return '';
-        }).join('');
-    }
-
+    
+    // Update Nav visibility based on content and boss settings
     ['news','info','market','discount','account'].forEach(k => { 
         const navEl = document.getElementById('nav-'+k);
         if(navEl) navEl.innerText = t[k]; 
@@ -202,9 +133,6 @@ window.updateUIScript = () => {
                 const hasAnyPosts = allPosts.some(p => p.category === k && p.lang === currentLang);
                 if (isBoss) {
                     btn.style.display = 'flex';
-                    let existing = btn.querySelector('.fa-eye, .fa-eye-slash');
-                    if (existing) existing.remove();
-                    btn.insertAdjacentHTML('beforeend', getHideBtn('navs', k));
                 } else {
                     btn.style.display = (hasAnyPosts && !isHiddenByBoss) ? 'flex' : 'none';
                 }
@@ -229,24 +157,22 @@ window.updateTabContent = (tab) => {
         });
 
         if (availableSubs.length > 0) {
-            if(subNav) subNav.style.display = 'block';
+            subNav.style.display = 'block';
             if (!activeSubCategory || !availableSubs.includes(activeSubCategory)) {
                 activeSubCategory = availableSubs[0];
             }
-            if(subBar) {
-                subBar.innerHTML = availableSubs.map(item => `
-                    <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''} flex items-center justify-center gap-2" 
-                    onclick="filterBySub('${tab}', '${item}')">
-                        ${item} ${getHideBtn('factions', item)}
-                    </button>
-                `).join('');
-            }
+            subBar.innerHTML = availableSubs.map(item => `
+                <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''}" 
+                onclick="filterBySub('${tab}', '${item}')">
+                    ${item}
+                </button>
+            `).join('');
         } else {
-            if(subNav) subNav.style.display = 'none';
+            subNav.style.display = 'none';
             activeSubCategory = null;
         }
     } else { 
-        if(subNav) subNav.style.display = 'none'; 
+        subNav.style.display = 'none'; 
     }
 
     if (tab === 'account') { 
@@ -256,43 +182,24 @@ window.updateTabContent = (tab) => {
         if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
             filtered = filtered.filter(p => p.sub_category === activeSubCategory);
         }
-        filtered.sort((a,b)=>b.id-a.id);
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
     }
 };
 
-function formatFullDate(ts) {
-    const d = new Date(ts);
-    return d.getFullYear() + "/" + (d.getMonth() + 1).toString().padStart(2, '0') + "/" + d.getDate().toString().padStart(2, '0') + " " + d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-}
+// --- Post & Comment Rendering ---
 
 window.renderPostHTML = (p) => {
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
-    
-    const isLiked = currentUser && userFavorites[currentUser.email] && userFavorites[currentUser.email].some(f => f.id === p.id);
+    const isLiked = currentUser && likeCounts[p.id] > 0; // Simple check for visual
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media" loading="lazy">` : '';
     
     let expiryHTML = '';
-    if (p.expiry_date === 'never' || !p.expiry_date) {
-        if (isAdmin) expiryHTML = `<span class="expiry-tag"><i class="far fa-clock"></i> NEVER</span>`;
-    } else {
+    if (p.expiry_date && p.expiry_date !== 'never') {
         const diff = p.expiry_date - Date.now();
         const days = Math.floor(diff / 86400000);
-        const hours = Math.floor((diff % 86400000) / 3600000);
-        const timeLeftLine = `<span class="expiry-tag"><i class="far fa-clock"></i> ${t.time_left} ${days}d ${hours}h</span>`;
-        if (isAdmin) { expiryHTML = `<div class="flex flex-col items-end gap-1"><span class="duration-info">${t.ads_for} ${p.duration_label || "Never"}</span>${timeLeftLine}</div>`; }
-        else if (p.category === 'discount') { expiryHTML = `<div class="flex flex-col items-end gap-1">${timeLeftLine}</div>`; }
+        expiryHTML = `<span class="expiry-tag"><i class="far fa-clock"></i> ${t.time_left} ${days}d</span>`;
     }
-
-    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end mt-1"><span class="admin-name-tag">By: ${p.admin_name || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
-    const commentCount = (comments[p.id] || []).length;
-    
-    const linkBtnHTML = p.post_link ? `
-        <a href="${p.post_link.startsWith('http') ? p.post_link : 'https://' + p.post_link}" target="_blank" 
-           class="flex items-center justify-center w-8 h-8 bg-blue-500/20 rounded-full text-blue-400">
-            <i class="fas fa-link text-xs"></i>
-        </a>` : '';
 
     return `
     <div class="post-card animate-fade">
@@ -300,45 +207,29 @@ window.renderPostHTML = (p) => {
         <div class="post-body">
             <div class="flex justify-between items-start mb-2">
                 <span class="text-[10px] opacity-40">${timeAgo(p.id)}</span>
-                <div class="flex gap-3 items-center">
-                    ${linkBtnHTML}
+                <div class="flex gap-3">
                     ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
                 </div>
             </div>
             ${p.title ? `<div class="glass-title"><h3 class="font-bold text-md">${p.title}</h3></div>` : ''}
             ${p.desc ? `<p class="text-sm opacity-70 mb-4">${p.desc}</p>` : ''}
-            <div class="flex justify-between items-end border-t border-white/5 pt-3">
+            <div class="flex justify-between items-center border-t border-white/5 pt-3">
                 <div class="flex gap-6">
                     <button onclick="toggleFavorite(${p.id})" class="flex items-center gap-2">
-                        <i class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart opacity-50'} text-lg"></i>
+                        <i class="fas fa-heart ${isLiked ? 'text-red-500' : 'opacity-20'}"></i>
                         <span class="text-xs">${likeCounts[p.id] || 0}</span>
                     </button>
                     <button onclick="openComments(${p.id})" class="flex items-center gap-2 opacity-60">
-                        <i class="far fa-comment-dots text-lg"></i><span class="text-xs">${commentCount}</span>
+                        <i class="far fa-comment-dots"></i><span class="text-xs">${(comments[p.id] || []).length}</span>
                     </button>
                 </div>
-                <div class="flex flex-col items-end">
-                    ${expiryHTML}
-                    ${creatorInfo}
-                </div>
+                ${expiryHTML}
             </div>
         </div>
     </div>`;
 };
 
-window.renderAuthUI = (mode = 'login') => {
-    const display = document.getElementById('content-display');
-    const t = uiTrans[currentLang];
-    if (currentUser) {
-        display.innerHTML = `<div class="glass-card p-8 text-center animate-fade"><div class="w-16 h-16 bg-white/10 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">${currentUser.email[0].toUpperCase()}</div><h2 class="text-xl font-bold mb-2">${currentUser.name || currentUser.email.split('@')[0]}</h2><p class="text-xs opacity-40 mb-6">${currentUser.email}</p><button class="auth-submit !bg-red-500/20 !text-red-400 !border-red-500/30" onclick="logout()">${t.logout}</button></div>`;
-        return;
-    }
-    if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
-    } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
-    }
-};
+// --- Auth logic ---
 
 window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim().toLowerCase();
@@ -347,7 +238,7 @@ window.handleLogin = async () => {
     if (e === OWNER_EMAIL && p === OWNER_PASS) {
         currentUser = { email: e, name: 'Boss Belal', role: 'admin' };
         localStorage.setItem('user', JSON.stringify(currentUser));
-        window.location.reload(); 
+        location.reload(); 
         return;
     }
 
@@ -355,261 +246,114 @@ window.handleLogin = async () => {
     if (user) { 
         currentUser = user; 
         localStorage.setItem('user', JSON.stringify(currentUser)); 
-        window.location.reload(); 
+        location.reload(); 
     } else { 
         alert(uiTrans[currentLang].authFail); 
     }
 };
 
-window.handleRegister = async () => {
-    const u = document.getElementById('reg-user').value.trim();
-    const e = document.getElementById('reg-email').value.trim().toLowerCase();
-    const p = document.getElementById('reg-pass').value.trim();
-    if (!u || !e || !p) return;
-    const { data: existing } = await _supabase.from('users').select('email').eq('email', e).single();
-    if (existing) { alert("Email already exists"); return; }
-    
-    const newUser = { email: e, password: p, name: u, role: e === OWNER_EMAIL ? 'admin' : 'user', last_active: Date.now() };
-    const { error } = await _supabase.from('users').insert([newUser]);
-    if (!error) {
-        alert(uiTrans[currentLang].regSuccess); renderAuthUI('login');
-    }
-};
-
 window.logout = () => {
     localStorage.removeItem('user');
-    window.location.reload();
+    location.reload();
 };
 
-window.filterBySub = (tab, subName) => { 
-    activeSubCategory = subName; 
-    lastVisitedSub[tab] = subName; 
-    localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); 
+// --- Modals Control ---
+
+window.openPostModal = () => document.getElementById('post-modal').style.display = 'flex';
+window.closePostModal = () => document.getElementById('post-modal').style.display = 'none';
+window.openNotifModal = () => document.getElementById('notif-modal').style.display = 'flex';
+window.closeNotifModal = () => document.getElementById('notif-modal').style.display = 'none';
+window.closeLangMenu = () => document.getElementById('lang-overlay').style.display = 'none';
+window.closeHeartMenu = () => document.getElementById('heart-overlay').style.display = 'none';
+window.closeCommentModal = () => document.getElementById('comment-modal').style.display = 'none';
+
+window.openLangMenu = () => document.getElementById('lang-overlay').style.display = 'flex';
+
+window.changeLanguage = (lang) => {
+    currentLang = lang;
+    localStorage.setItem('appLang', lang);
+    window.closeLangMenu();
+    updateUIScript();
+    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+};
+
+window.changeTab = (tab, el) => { 
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
+    if(el) el.classList.add('active'); 
+    localStorage.setItem('lastMainTab', tab);
     updateTabContent(tab); 
 };
 
-window.toggleFavorite = async (id) => {
-    if (!currentUser) { showGuestAuthAlert(); return; }
-    const email = currentUser.email;
-    const { data: existing } = await _supabase.from('likes').select('*').eq('post_id', id).eq('user_email', email).single();
-    
-    if (!existing) {
-        await _supabase.from('likes').insert([{ post_id: id, user_email: email }]);
-    } else {
-        await _supabase.from('likes').delete().eq('post_id', id).eq('user_email', email);
-    }
-    await syncAllData();
-};
-
-window.showFavorites = (type) => {
-    currentFavTab = type;
-    document.querySelectorAll('.fav-nav-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.getElementById(type === 'post' ? 'btn-fav-post' : 'btn-fav-notif');
-    if(btn) btn.classList.add('active');
-    
-    if (!currentUser) {
-        showGuestAuthAlert();
-        return;
-    }
-    
-    let likedItems = [];
-    if (type === 'post') {
-        likedItems = allPosts.filter(p => p.category !== 'notif' && likeCounts[p.id] > 0);
-    } else {
-        likedItems = allPosts.filter(p => p.category === 'notif' && likeCounts[p.id] > 0);
-    }
-    
-    const display = document.getElementById('fav-items-display');
-    if(display) {
-        display.innerHTML = likedItems.length ? likedItems.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
-    }
-};
+// --- Database Interactions ---
 
 window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
-    const postLink = document.getElementById('post-external-link')?.value.trim() || "";
     const cat = document.getElementById('post-category').value; 
-    const durSelect = document.getElementById('post-duration');
-    const duration = durSelect.value; 
-    const durationLabel = durSelect.options[durSelect.selectedIndex].text;
+    const lang = document.getElementById('post-lang').value;
     
-    if(!title && !desc && !tempMedia.url) return;
-    
-    let expiryDate = null; 
-    if (duration !== "never") { 
-        const units = { '1w': 7, '2w': 14, '3w': 21, '1m': 30, '2m': 60, '3m': 90 }; 
-        expiryDate = Date.now() + (units[duration] * 86400000); 
-    }
-    
-    const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
-    
-    const newPost = { 
-        title, desc, 
-        post_link: postLink,
-        admin_name: adminName, 
-        user_email: currentUser?.email || "system", 
-        lang: document.getElementById('post-lang').value, 
-        category: cat, 
-        sub_category: document.getElementById('post-sub-category').value, 
-        expiry_date: expiryDate, 
-        duration_label: durationLabel, 
-        media: tempMedia.url 
-    }; 
-    
-    const { error } = await _supabase.from('posts').insert([newPost]);
-    if(!error) {
-        if(window.closePostModal) window.closePostModal(); 
-        await syncAllData();
-    }
-};
-
-window.submitNotif = async () => {
-    const title = document.getElementById('notif-title').value; 
-    const desc = document.getElementById('notif-desc').value;
-    const lang = document.getElementById('notif-lang').value;
     const { error } = await _supabase.from('posts').insert([{
-        title, desc, lang, category: 'notif', admin_name: currentUser?.name || "Admin", user_email: currentUser?.email
+        title, desc, category: cat, lang, 
+        user_email: currentUser?.email,
+        admin_name: currentUser?.name || "Admin"
     }]);
+
     if(!error) {
-        if(window.closeNotifModal) window.closeNotifModal(); 
+        closePostModal();
         await syncAllData();
     }
 };
 
-window.openAdminStats = () => {
-    const modal = document.getElementById('admin-stats-modal');
-    if (modal) modal.style.display = 'flex';
-    filterUserList('all');
-};
-
-window.closeAdminStats = () => {
-    const modal = document.getElementById('admin-stats-modal');
-    if (modal) modal.style.display = 'none';
-};
-
-window.filterUserList = (filterType) => {
-    const now = Date.now();
-    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    const btn = document.getElementById('btn-stat-' + filterType);
-    if(btn) btn.classList.add('active');
-    let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.last_active) < 300000);
-    renderUsers(usersToDisplay); 
-    updateCounters();
-};
-
-function renderUsers(users) {
-    const list = document.getElementById('admin-user-list'); 
-    if(!list) return;
-    const isBoss = currentUser?.email === OWNER_EMAIL;
-    list.innerHTML = users.map(u => {
-        const isUserBoss = u.email === OWNER_EMAIL;
-        const postCount = allPosts.filter(p => p.user_email === u.email).length;
-        const roleLabel = isUserBoss ? "BOSS" : (u.role === "admin" ? "ADMIN" : "USER");
-        const roleColor = isUserBoss ? "bg-yellow-500/30 border-yellow-500/50" : (u.role === "admin" ? "bg-red-500/30 border-red-500/50" : "bg-blue-500/20 border-blue-500/30");
-        return `<div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade"><div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${(Date.now() - u.last_active) < 300000 ? 'bg-green-500' : 'bg-gray-500'}"></div><div><div class="flex items-center gap-2"><span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span><span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span></div><span class="text-[10px] opacity-40 italic d-block">${u.email}</span><div class="text-[10px] text-green-400 mt-1 font-bold">Posts: ${postCount}</div></div></div>${isBoss && !isUserBoss ? `<button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border backdrop-blur-lg">${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}</button>` : ''}</div>`;
-    }).join('');
-}
-
-window.toggleUserRole = async (email) => { 
-    if (currentUser?.email !== OWNER_EMAIL) return; 
-    const user = registeredUsers.find(u => u.email === email);
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
-    await _supabase.from('users').update({ role: newRole }).eq('email', email);
+window.toggleFavorite = async (id) => {
+    if (!currentUser) return alert(uiTrans[currentLang].authErr);
+    const { data: existing } = await _supabase.from('likes').select('*').eq('post_id', id).eq('user_email', currentUser.email).single();
+    if (existing) {
+        await _supabase.from('likes').delete().eq('id', existing.id);
+    } else {
+        await _supabase.from('likes').insert([{ post_id: id, user_email: currentUser.email }]);
+    }
     await syncAllData();
-    filterUserList('all');
 };
 
-function updateCounters() { 
-    const now = Date.now(); 
-    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = registeredUsers.length; 
-    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = registeredUsers.filter(u => (now - u.last_active) < 300000).length; 
-}
-
-window.showAllNotifs = () => {
-    const t = uiTrans[currentLang];
-    const el = document.getElementById('heart-overlay');
-    if (el) {
-        el.style.display='block'; 
-        const title = document.getElementById('fav-title-main');
-        if(title) title.innerText = t.notifSec;
-        const navTabs = document.getElementById('fav-nav-tabs');
-        if(navTabs) navTabs.style.display = 'none'; 
-        
-        const toggleBtn = document.getElementById('notif-toggle-btn');
-        if(toggleBtn) toggleBtn.style.display = 'flex';
-        
-        if (!currentUser) {
-            showGuestAuthAlert();
-        } else {
-            const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
-            const display = document.getElementById('fav-items-display');
-            if(display) display.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : `<p class="text-center py-10 opacity-20">${t.empty}</p>`;
-        }
-    }
+window.openComments = (id) => {
+    activeCommentPostId = id;
+    document.getElementById('comment-modal').style.display = 'flex';
+    renderComments();
+    updateCommentInputArea();
 };
 
-window.openHeartMenu = () => { 
-    const el = document.getElementById('heart-overlay');
-    if (el) {
-        if(!currentUser) {
-            showGuestAuthAlert();
-        } else {
-            el.style.display='block'; 
-            const title = document.getElementById('fav-title-main');
-            if(title) title.innerText = uiTrans[currentLang].fav; 
-            const navTabs = document.getElementById('fav-nav-tabs');
-            if(navTabs) navTabs.style.display = 'flex'; 
-            const toggleBtn = document.getElementById('notif-toggle-btn');
-            if(toggleBtn) toggleBtn.style.display = 'none'; 
-            showFavorites('post'); 
-        }
-    }
+window.renderComments = () => {
+    const list = document.getElementById('comment-list');
+    const coms = comments[activeCommentPostId] || [];
+    list.innerHTML = coms.map(c => `
+        <div class="bg-white/5 p-3 rounded-xl">
+            <b class="text-[10px] text-blue-400">@${c.user_name}</b>
+            <p class="text-sm">${c.text}</p>
+        </div>
+    `).join('') || '<p class="text-center opacity-20 mt-4">No comments</p>';
 };
 
-function showGuestAuthAlert() {
-    const t = uiTrans[currentLang];
-    const display = document.getElementById('fav-items-display');
-    if (display) {
-        display.innerHTML = `
-            <div class="p-8 text-center animate-fade">
-                <i class="fas fa-lock text-4xl mb-4 opacity-20"></i>
-                <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
-                <p class="text-[11px] leading-relaxed opacity-60 mb-6">${t.wantReg}</p>
-                <div class="flex gap-3 px-4">
-                    <button onclick="changeTab('account', document.getElementById('nav-btn-account'))" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
-                    <button onclick="document.getElementById('heart-overlay').style.display='none'" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
-                </div>
-            </div>`;
-    }
-}
-
-function checkNewNotifs() { 
-    if(!currentUser) return; 
-    const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); 
-    const newOnes = allPosts.filter(p => p.category === 'notif' && p.id > lastSeen && p.lang === currentLang); 
-    if(newOnes.length > 0) { 
-        if(window.fireToast) window.fireToast(newOnes[0].title, newOnes[0].desc); 
-        localStorage.setItem('lastNotifSeen', Date.now().toString()); 
-    } 
-}
-
-window.openComments = (id) => { 
-    activeCommentPostId = id; 
-    replyingToId = null; 
-    const modal = document.getElementById('comment-modal');
-    if(modal) modal.style.display = 'flex'; 
-    renderComments(); 
-    updateCommentInputArea(); 
+window.submitComment = async () => {
+    const input = document.getElementById('comment-input');
+    if (!input.value.trim() || !currentUser) return;
+    
+    await _supabase.from('comments').insert([{
+        post_id: activeCommentPostId,
+        user_email: currentUser.email,
+        user_name: currentUser.name || "User",
+        text: input.value
+    }]);
+    
+    input.value = '';
+    await syncAllData();
+    renderComments();
 };
 
 window.updateCommentInputArea = () => {
     const area = document.getElementById('comment-input-area');
-    if(!area) return;
-    const t = uiTrans[currentLang];
-    if(!currentUser) { 
-        area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500">${t.noComment}</div>`; 
-        return; 
+    if (!currentUser) {
+        area.innerHTML = `<p class="p-4 text-center text-xs text-yellow-500">${uiTrans[currentLang].noComment}</p>`;
+        return;
     }
     area.innerHTML = `
         <div class="flex gap-2 p-2">
@@ -618,33 +362,25 @@ window.updateCommentInputArea = () => {
         </div>`;
 };
 
-window.renderComments = () => {
-    const list = document.getElementById('comment-list');
-    if(!list) return;
-    const allComs = comments[activeCommentPostId] || [];
-    list.innerHTML = allComs.map(c => `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`).join('') || '<p class="text-center opacity-20">Empty</p>';
+// --- Search & Stats ---
+
+window.searchUsers = (val) => {
+    const filtered = registeredUsers.filter(u => u.email.includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase())));
+    renderUsers(filtered);
 };
 
-window.submitComment = async () => {
-    const input = document.getElementById('comment-input');
-    if(!input || !input.value.trim() || !currentUser) return;
-    const { error } = await _supabase.from('comments').insert([{
-        post_id: activeCommentPostId,
-        user_email: currentUser.email,
-        user_name: currentUser.name || currentUser.email.split('@')[0],
-        text: input.value
-    }]);
-    if(!error) {
-        input.value = ''; await syncAllData(); renderComments();
+function checkNewNotifs() {
+    const lastSeen = localStorage.getItem('lastNotifSeen') || 0;
+    const latestNotif = allPosts.find(p => p.category === 'notif' && p.id > lastSeen);
+    if (latestNotif) {
+        const toast = document.getElementById('toast-area');
+        document.getElementById('toast-title').innerText = latestNotif.title;
+        document.getElementById('toast-desc').innerText = latestNotif.desc;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 5000);
+        localStorage.setItem('lastNotifSeen', latestNotif.id);
     }
-};
+}
 
-window.deletePost = async (id) => { 
-    if(confirm('Delete?')) { 
-        await _supabase.from('posts').delete().eq('id', id);
-        await syncAllData();
-    } 
-};
-
-// --- Initialization ---
+// Start app
 init();
