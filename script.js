@@ -45,7 +45,6 @@ async function syncAllData() {
         const { data: usersData } = await _supabase.from('users').select('*');
         registeredUsers = usersData || [];
         
-        // نوێکردنەوەی ژمارەی بەکارهێنەران بۆ ئادمین
         if (currentUser && currentUser.email === OWNER_EMAIL) {
             updateCounters();
             renderUsers(registeredUsers);
@@ -91,13 +90,13 @@ function getHideBtn(type, value) {
 function updateCounters() { 
     const now = Date.now(); 
     const totalUsers = registeredUsers.length;
-    const onlineUsers = registeredUsers.filter(u => (now - (u.last_active || 0)) < 300000).length; // 5 mins threshold
+    const onlineUsers = registeredUsers.filter(u => (now - (u.last_active || 0)) < 300000).length;
 
     if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
     if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = onlineUsers; 
 }
 
-// --- Window Scoped Functions (Global) ---
+// --- Window Scoped Functions ---
 window.toggleDarkMode = () => {
     isDarkMode = !isDarkMode;
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
@@ -157,12 +156,13 @@ window.updateUIScript = () => {
             const hasPosts = allPosts.some(p => p.lang === l);
             const isHiddenByBoss = hiddenItems.langs.includes(l);
             const langName = l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'));
+            
             if (isBoss) {
                 return `<div class="flex items-center justify-between w-full bg-white/5 rounded-xl p-1 mb-2">
                     <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1 text-xs">${langName}</button>
                     ${getHideBtn('langs', l)}
                 </div>`;
-            } else if (hasPosts && !isHiddenByBoss) {
+            } else if (!isHiddenByBoss && hasPosts) {
                 return `<button onclick="changeLanguage('${l}')" class="lang-btn-glass">${langName}</button>`;
             }
             return '';
@@ -183,7 +183,8 @@ window.updateUIScript = () => {
                 if (isBoss) {
                     btn.style.display = 'flex';
                 } else {
-                    btn.style.display = (hasAnyPosts && !isHiddenByBoss) ? 'flex' : 'none';
+                    // ئەگەر Hide بووبێت نیشان نادرێت تەنانەت ئەگەر پۆستیشی هەبێت
+                    btn.style.display = (!isHiddenByBoss && hasAnyPosts) ? 'flex' : 'none';
                 }
             }
         }
@@ -202,6 +203,7 @@ window.updateTabContent = (tab) => {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
             const isHiddenByBoss = hiddenItems.factions.includes(sub);
             if (isBoss) return true;
+            // بۆ یوزەر تەنها کاتێک نیشان بدە کە Hide نەکرابێت و پۆستیشی هەبێت
             return !isHiddenByBoss && allPosts.some(p => p.category === tab && p.sub_category === sub && p.lang === currentLang);
         });
 
@@ -303,8 +305,6 @@ window.renderAuthUI = (mode = 'login') => {
 window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim().toLowerCase();
     const p = document.getElementById('auth-pass').value.trim();
-    
-    // Update active status during login
     if (e === OWNER_EMAIL && p === OWNER_PASS) {
         currentUser = { email: e, name: 'Boss Belal', role: 'admin', last_active: Date.now() };
     } else {
@@ -329,22 +329,14 @@ window.handleRegister = async () => {
 
 window.logout = () => { localStorage.removeItem('user'); window.location.reload(); };
 
-// --- Modals ---
+// --- Modals & Submits ---
 window.openPostModal = () => {
     document.getElementById('post-modal').style.display = 'flex';
     window.updateSubSelect('news');
 };
 window.closePostModal = () => document.getElementById('post-modal').style.display = 'none';
-
 window.openNotifModal = () => document.getElementById('notif-modal').style.display = 'flex';
 window.closeNotifModal = () => document.getElementById('notif-modal').style.display = 'none';
-
-window.openAdminStats = () => {
-    document.getElementById('admin-stats-modal').style.display = 'flex';
-    renderUsers(registeredUsers);
-    updateCounters();
-};
-window.closeAdminStats = () => document.getElementById('admin-stats-modal').style.display = 'none';
 
 window.updateSubSelect = (cat) => {
     const subSel = document.getElementById('post-sub-category');
@@ -363,22 +355,11 @@ window.submitPost = async () => {
     const cat = document.getElementById('post-category').value; 
     const sub = document.getElementById('post-sub-category').value;
     const lang = document.getElementById('post-lang').value;
-    
     const { error } = await _supabase.from('posts').insert([{ 
         title, desc, category: cat, sub_category: sub, lang, 
         admin_name: currentUser.name, user_email: currentUser.email, media: tempMedia.url 
     }]);
     if(!error) { window.closePostModal(); syncAllData(); }
-};
-
-window.submitNotif = async () => {
-    const title = document.getElementById('notif-title').value; 
-    const desc = document.getElementById('notif-desc').value;
-    const lang = document.getElementById('notif-lang').value;
-    const { error } = await _supabase.from('posts').insert([{
-        title, desc, lang, category: 'notif', admin_name: currentUser.name, user_email: currentUser.email
-    }]);
-    if(!error) { window.closeNotifModal(); syncAllData(); }
 };
 
 window.openComments = (id) => { 
@@ -432,7 +413,6 @@ window.showFavorites = (type) => {
 function renderUsers(users) {
     const list = document.getElementById('admin-user-list');
     if (!list) return;
-    
     list.innerHTML = users.map(u => {
         const isOnline = (Date.now() - (u.last_active || 0)) < 300000;
         return `
@@ -442,35 +422,25 @@ function renderUsers(users) {
                 <div><p class="font-bold text-sm">${u.name}</p><p class="text-[10px] opacity-40">${u.email}</p></div>
             </div>
             <span class="text-[10px] p-1 rounded ${u.role==='admin'?'bg-red-500':'bg-blue-500'}">${u.role.toUpperCase()}</span>
-        </div>
-    `;}).join('');
+        </div>`;
+    }).join('');
 }
 
 window.openCloudinaryWidget = () => {
     const url = prompt("Enter image URL:");
-    if(url) {
-        tempMedia.url = url;
-        document.getElementById('upload-status').innerText = "Image Selected!";
-    }
+    if(url) { tempMedia.url = url; document.getElementById('upload-status').innerText = "Image Selected!"; }
 };
 
 // --- Init ---
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    
-    // Update active status for logged in users
-    if (currentUser) {
-        await _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
-    }
-    
+    if (currentUser) await _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
     await syncAllData();
     updateUIScript();
     const lastTab = localStorage.getItem('lastMainTab') || 'news';
     changeTab(lastTab, document.getElementById('nav-btn-' + lastTab));
-    
-    // Heartbeat to keep status updated
     setInterval(() => {
         if (currentUser) _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
-    }, 60000); // every minute
+    }, 60000);
 }
 init();
