@@ -577,7 +577,7 @@ window.deleteComment = (comId) => { if(!confirm("Delete?")) return; comments[act
 window.deletePost = (id) => { if(confirm('Delete?')) { allPosts = allPosts.filter(x => x.id !== id); localStorage.setItem('allPosts', JSON.stringify(allPosts)); init(); } };
 window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
 window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
-window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
+window.toggleDarkMode = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
 window.updateHeartUI = () => { const h = document.getElementById('main-heart'); if(h) h.className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
 window.closeLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'none'; };
 window.openLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'flex'; };
@@ -586,12 +586,12 @@ window.openPostModal = () => {
     const el = document.getElementById('post-modal'); 
     if(el) {
         el.style.display = 'flex';
-        // لێرەدا کاتێک مۆداڵەکە ئەکەیتەوە، ئۆتۆماتیکی سەیری ئەو تابە دەکات کە لێیەتی
+        // لێرەدا ئۆتۆماتیکی سەیری ئەو بەشە دەکات کە لێیەتی تا فاکشنەکان پیشان بدات
         const currentTab = localStorage.getItem('lastMainTab') || 'news';
         const postCatSelect = document.getElementById('post-category');
         if(postCatSelect) {
             postCatSelect.value = currentTab;
-            updateSubSelect(currentTab); // فاکشنەکان نوێ دەکاتەوە
+            window.updateSubSelect(currentTab); // بانگکردنی فەنکشنەکە بۆ پیشاندانی فاکشنەکان
         }
     }
 };
@@ -610,6 +610,7 @@ window.updateSubSelect = (cat) => {
         s.innerHTML = subCategories[cat][currentLang].map(i => `<option value="${i}">${i}</option>`).join(''); 
     } else if(s) {
         s.style.display = 'none'; 
+        s.innerHTML = "";
     }
 };
 
