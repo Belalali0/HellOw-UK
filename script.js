@@ -338,6 +338,8 @@ window.submitPost = () => {
     const durSelect = document.getElementById('post-duration');
     const duration = durSelect.value; 
     const durationLabel = durSelect.options[durSelect.selectedIndex].text;
+    const subCatEl = document.getElementById('post-sub-category');
+    const subCategory = (subCatEl && subCatEl.style.display !== 'none') ? subCatEl.value : "";
     
     if(!title && !desc && !tempMedia.url) return;
     
@@ -353,7 +355,7 @@ window.submitPost = () => {
     allPosts.push({ 
         id: Date.now(), title, desc, postLink, adminName, userEmail, 
         lang: document.getElementById('post-lang').value, 
-        category: cat, subCategory: document.getElementById('post-sub-category').value, 
+        category: cat, subCategory: subCategory, 
         expiryDate, durationLabel, media: tempMedia.url 
     }); 
     
@@ -579,7 +581,21 @@ window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('the
 window.updateHeartUI = () => { const h = document.getElementById('main-heart'); if(h) h.className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
 window.closeLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'none'; };
 window.openLangMenu = () => { const el = document.getElementById('lang-overlay'); if(el) el.style.display = 'flex'; };
-window.openPostModal = () => { const el = document.getElementById('post-modal'); if(el) el.style.display = 'flex'; };
+
+window.openPostModal = () => { 
+    const el = document.getElementById('post-modal'); 
+    if(el) {
+        el.style.display = 'flex';
+        // لێرەدا کاتێک مۆداڵەکە ئەکەیتەوە، ئۆتۆماتیکی سەیری ئەو تابە دەکات کە لێیەتی
+        const currentTab = localStorage.getItem('lastMainTab') || 'news';
+        const postCatSelect = document.getElementById('post-category');
+        if(postCatSelect) {
+            postCatSelect.value = currentTab;
+            updateSubSelect(currentTab); // فاکشنەکان نوێ دەکاتەوە
+        }
+    }
+};
+
 window.closePostModal = () => { const el = document.getElementById('post-modal'); if(el) el.style.display = 'none'; };
 window.openNotifModal = () => { const el = document.getElementById('notif-modal'); if(el) el.style.display = 'flex'; };
 window.closeNotifModal = () => { const el = document.getElementById('notif-modal'); if(el) el.style.display = 'none'; };
@@ -592,7 +608,9 @@ window.updateSubSelect = (cat) => {
     if (s && ['info', 'market', 'discount'].includes(cat)) { 
         s.style.display = 'block'; 
         s.innerHTML = subCategories[cat][currentLang].map(i => `<option value="${i}">${i}</option>`).join(''); 
-    } else if(s) s.style.display = 'none'; 
+    } else if(s) {
+        s.style.display = 'none'; 
+    }
 };
 
 window.toggleNotifScreenStatus = () => { notifOnScreen = !notifOnScreen; localStorage.setItem('notifOnScreen', notifOnScreen); updateNotifToggleUI(); };
