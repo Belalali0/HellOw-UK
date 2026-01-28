@@ -21,35 +21,38 @@ let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
 let registeredUsers = []; 
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
+const OWNER_PASS = 'belal5171'; // پاسۆردە دیاریکراوەکەی خۆت
 
 // --- Functions to Sync with Database ---
 
 async function syncAllData() {
-    const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
-    allPosts = postsData || [];
+    try {
+        const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
+        allPosts = postsData || [];
 
-    const { data: comsData } = await _supabase.from('comments').select('*');
-    comments = {};
-    if (comsData) {
-        comsData.forEach(c => {
-            if (!comments[c.post_id]) comments[c.post_id] = [];
-            comments[c.post_id].push(c);
-        });
-    }
+        const { data: comsData } = await _supabase.from('comments').select('*');
+        comments = {};
+        if (comsData) {
+            comsData.forEach(c => {
+                if (!comments[c.post_id]) comments[c.post_id] = [];
+                comments[c.post_id].push(c);
+            });
+        }
 
-    const { data: likesData } = await _supabase.from('likes').select('*');
-    likeCounts = {};
-    if (likesData) {
-        likesData.forEach(l => {
-            likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
-        });
-    }
+        const { data: likesData } = await _supabase.from('likes').select('*');
+        likeCounts = {};
+        if (likesData) {
+            likesData.forEach(l => {
+                likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
+            });
+        }
 
-    const { data: usersData } = await _supabase.from('users').select('*');
-    registeredUsers = usersData || [];
-    
-    updateUIScript();
-    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+        const { data: usersData } = await _supabase.from('users').select('*');
+        registeredUsers = usersData || [];
+        
+        updateUIScript();
+        updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+    } catch (e) { console.error("Sync Error:", e); }
 }
 
 const uiTrans = {
@@ -68,7 +71,7 @@ const subCategories = {
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
     await syncAllData(); 
-    updateHeartUI();
+    if(typeof updateHeartUI === 'function') updateHeartUI();
     updateBossIcon();
     const lastMain = localStorage.getItem('lastMainTab') || 'news';
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
@@ -165,7 +168,7 @@ window.updateTabContent = (tab) => {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
             const isHiddenByBoss = hiddenItems.factions.includes(sub);
             if (isBoss) return true;
-            return !isHiddenByBoss && allPosts.some(p => p.category === tab && p.subCategory === sub && p.lang === currentLang);
+            return !isHiddenByBoss && allPosts.some(p => p.category === tab && p.sub_category === sub && p.lang === currentLang);
         });
 
         if (availableSubs.length > 0) {
@@ -192,7 +195,7 @@ window.updateTabContent = (tab) => {
     } else {
         let filtered = allPosts.filter(p => p.lang === currentLang && p.category === tab);
         if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
-            filtered = filtered.filter(p => p.subCategory === activeSubCategory);
+            filtered = filtered.filter(p => p.sub_category === activeSubCategory);
         }
         filtered.sort((a,b)=>b.id-a.id);
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
@@ -208,27 +211,26 @@ window.renderPostHTML = (p) => {
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
     
-    // Check if liked using the global likeCounts or database state
     const isLiked = currentUser && userFavorites[currentUser.email] && userFavorites[currentUser.email].some(f => f.id === p.id);
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
     
     let expiryHTML = '';
-    if (p.expiryDate === 'never' || !p.expiryDate) {
+    if (p.expiry_date === 'never' || !p.expiry_date) {
         if (isAdmin) expiryHTML = `<span class="expiry-tag"><i class="far fa-clock"></i> NEVER</span>`;
     } else {
-        const diff = p.expiryDate - Date.now();
+        const diff = p.expiry_date - Date.now();
         const days = Math.floor(diff / 86400000);
         const hours = Math.floor((diff % 86400000) / 3600000);
         const timeLeftLine = `<span class="expiry-tag"><i class="far fa-clock"></i> ${t.time_left} ${days}d ${hours}h</span>`;
-        if (isAdmin) { expiryHTML = `<div class="flex flex-col items-end gap-1"><span class="duration-info">${t.ads_for} ${p.durationLabel || "Never"}</span>${timeLeftLine}</div>`; }
+        if (isAdmin) { expiryHTML = `<div class="flex flex-col items-end gap-1"><span class="duration-info">${t.ads_for} ${p.duration_label || "Never"}</span>${timeLeftLine}</div>`; }
         else if (p.category === 'discount') { expiryHTML = `<div class="flex flex-col items-end gap-1">${timeLeftLine}</div>`; }
     }
 
-    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.adminName || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
+    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.admin_name || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
     const commentCount = (comments[p.id] || []).length;
     
-    const linkBtnHTML = p.postLink ? `
-        <a href="${p.postLink.startsWith('http') ? p.postLink : 'https://' + p.postLink}" target="_blank" 
+    const linkBtnHTML = p.post_link ? `
+        <a href="${p.post_link.startsWith('http') ? p.post_link : 'https://' + p.post_link}" target="_blank" 
            class="flex items-center justify-center w-9 h-9 bg-blue-500/20 rounded-full text-blue-400 hover:scale-110 transition-transform">
             <i class="fas fa-link text-sm"></i>
         </a>` : '';
@@ -280,18 +282,17 @@ window.renderAuthUI = (mode = 'login') => {
 };
 
 window.handleLogin = async () => {
-    const e = document.getElementById('auth-email').value.trim();
+    const e = document.getElementById('auth-email').value.trim().toLowerCase();
     const p = document.getElementById('auth-pass').value.trim();
     
-    // 1. Check for Owner override first (Emergency login)
-    if (e === OWNER_EMAIL && p === 'password') { // لێرە پاسۆردەکەت بنووسە
-        currentUser = { email: e, name: 'Boss', role: 'admin' };
+    // Emergency Owner Login
+    if (e === OWNER_EMAIL && p === OWNER_PASS) {
+        currentUser = { email: e, name: 'Boss Belal', role: 'admin' };
         localStorage.setItem('user', JSON.stringify(currentUser));
         window.location.reload(); 
         return;
     }
 
-    // 2. Standard DB login
     const { data: user, error } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
     if (user) { 
         currentUser = user; 
@@ -304,7 +305,7 @@ window.handleLogin = async () => {
 
 window.handleRegister = async () => {
     const u = document.getElementById('reg-user').value.trim();
-    const e = document.getElementById('reg-email').value.trim();
+    const e = document.getElementById('reg-email').value.trim().toLowerCase();
     const p = document.getElementById('reg-pass').value.trim();
     if (!u || !e || !p) return;
     const { data: existing } = await _supabase.from('users').select('email').eq('email', e).single();
@@ -347,13 +348,14 @@ window.showFavorites = (type) => {
         return;
     }
     
-    // Logic to show posts that the user has liked
-    const likedPosts = allPosts.filter(p => {
-        // This assumes you sync 'likes' to a local structure or re-fetch
-        return (likeCounts[p.id] > 0); 
-    });
+    let likedItems = [];
+    if (type === 'post') {
+        likedItems = allPosts.filter(p => p.category !== 'notif' && (likeCounts[p.id] > 0));
+    } else {
+        likedItems = allPosts.filter(p => p.category === 'notif' && (likeCounts[p.id] > 0));
+    }
     
-    document.getElementById('fav-items-display').innerHTML = likedPosts.length ? likedPosts.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    document.getElementById('fav-items-display').innerHTML = likedItems.length ? likedItems.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
 
 window.submitPost = async () => {
