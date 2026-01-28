@@ -1,9 +1,6 @@
 // --- Supabase Configuration ---
 const SUPABASE_URL = 'https://yqjfdtrjngwaoeygeiqh.supabase.co';
-// دڵنیابەرەوە لەوەی کلیلەکە ڕێک وەک خۆیەتی
 const SUPABASE_KEY = 'Sb_publishable_kR58sr2ch1wun_WmJqmetw_ailryRxc';
-
-// لێرەدا گۆڕانکاری کرا بۆ ئەوەی ناوی کتێبخانەکە و کلاینتەکە تێکەڵ نەبێت
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -50,11 +47,9 @@ async function fetchPostsFromServer() {
             allPosts = data;
             cleanExpiredPostsLocally();
             updateTabContent(localStorage.getItem('lastMainTab') || 'news');
-        } else {
-            console.error("Error fetching posts:", error);
         }
     } catch (err) {
-        console.error("Supabase connection failed:", err);
+        console.error("Connection Error:", err);
     }
 }
 
@@ -69,7 +64,7 @@ function ensureOwnerAccount() {
     localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
 }
 
-// --- UI Translations ---
+// --- Translations ---
 const uiTrans = {
     ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
     en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
@@ -83,44 +78,7 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-// --- Core Functions ---
-
-function updateBossIcon() {
-    const bossIcon = document.getElementById('boss-admin-icon');
-    if (bossIcon) bossIcon.style.display = (currentUser && currentUser.email === OWNER_EMAIL) ? 'block' : 'none';
-}
-
-window.toggleHideItem = (type, value, event) => {
-    if (event) event.stopPropagation();
-    if (hiddenItems[type].includes(value)) {
-        hiddenItems[type] = hiddenItems[type].filter(i => i !== value);
-    } else {
-        hiddenItems[type].push(value);
-    }
-    localStorage.setItem('hiddenItems', JSON.stringify(hiddenItems));
-    updateUIScript();
-    updateTabContent(localStorage.getItem('lastMainTab'));
-};
-
-function getHideBtn(type, value) {
-    if (!(currentUser && currentUser.email === OWNER_EMAIL)) return "";
-    const isHidden = hiddenItems[type].includes(value);
-    return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer pointer-events-auto" 
-               onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
-}
-
-function cleanExpiredPostsLocally() {
-    const now = Date.now();
-    allPosts = allPosts.filter(p => (!p.expiryDate || p.expiryDate === "never") ? true : now < p.expiryDate);
-}
-
-window.changeTab = (tab, el) => { 
-    closeHeartMenu(); 
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
-    if(el) el.classList.add('active'); 
-    localStorage.setItem('lastMainTab', tab);
-    updateTabContent(tab); 
-};
+// --- Rendering Functions ---
 
 window.updateUIScript = () => { 
     const t = uiTrans[currentLang]; 
@@ -217,11 +175,6 @@ window.updateTabContent = (tab) => {
     }
 };
 
-function formatFullDate(ts) {
-    const d = new Date(ts);
-    return d.getFullYear() + "/" + (d.getMonth() + 1).toString().padStart(2, '0') + "/" + d.getDate().toString().padStart(2, '0') + " " + d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-}
-
 window.renderPostHTML = (p) => {
     const favList = userFavorites[currentUser?.email] || [];
     const isLiked = favList.some(f => f.id === p.id);
@@ -244,12 +197,6 @@ window.renderPostHTML = (p) => {
     const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.adminName || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
     const commentCount = (comments[p.id] || []).length;
     
-    const linkBtnHTML = p.postLink ? `
-        <a href="${p.postLink.startsWith('http') ? p.postLink : 'https://' + p.postLink}" target="_blank" 
-           class="flex items-center justify-center w-9 h-9 bg-blue-500/20 rounded-full text-blue-400 hover:scale-110 transition-transform">
-            <i class="fas fa-link text-sm"></i>
-        </a>` : '';
-
     return `
     <div class="post-card animate-fade">
         ${mediaHTML}
@@ -257,7 +204,7 @@ window.renderPostHTML = (p) => {
             <div class="flex justify-between items-start mb-1">
                 <span class="text-[10px] opacity-40 mb-2">${timeAgo(p.id)}</span>
                 <div class="flex gap-3 items-center">
-                    ${linkBtnHTML}
+                    ${p.postLink ? `<a href="${p.postLink.startsWith('http') ? p.postLink : 'https://' + p.postLink}" target="_blank" class="text-blue-400"><i class="fas fa-link"></i></a>` : ''}
                     ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
                 </div>
             </div>
@@ -265,9 +212,9 @@ window.renderPostHTML = (p) => {
             ${p.desc ? `<p class="text-sm opacity-70 mb-4 px-2">${p.desc}</p>` : ''}
             <div class="flex justify-between items-end border-t border-white/5 pt-3">
                 <div class="flex gap-6">
-                    <button id="like-btn-${p.id}" onclick="toggleFavorite(${p.id})" class="flex items-center gap-2">
-                        <i class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart opacity-50'} text-xl transition-all duration-300"></i>
-                        <span id="like-count-${p.id}">${likeCounts[p.id] || 0}</span>
+                    <button onclick="toggleFavorite(${p.id})" class="flex items-center gap-2">
+                        <i class="${isLiked ? 'fas fa-heart text-red-500' : 'far fa-heart opacity-50'} text-xl"></i>
+                        <span>${likeCounts[p.id] || 0}</span>
                     </button>
                     <button onclick="openComments(${p.id})" class="flex items-center gap-2 opacity-60">
                         <i class="far fa-comment-dots text-xl"></i><span>${commentCount}</span>
@@ -282,80 +229,13 @@ window.renderPostHTML = (p) => {
     </div>`;
 };
 
-// --- Auth UI ---
-window.renderAuthUI = (mode = 'login') => {
-    const display = document.getElementById('content-display');
-    const t = uiTrans[currentLang];
-    if (currentUser) {
-        display.innerHTML = `<div class="glass-card p-8 text-center animate-fade"><div class="w-16 h-16 bg-white/10 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">${currentUser.email[0].toUpperCase()}</div><h2 class="text-xl font-bold mb-2">${currentUser.name || currentUser.email.split('@')[0]}</h2><p class="text-xs opacity-40 mb-6">${currentUser.email}</p><button class="auth-submit !bg-red-500/20 !text-red-400 !border-red-500/30" onclick="logout()">${t.logout}</button></div>`;
-        return;
-    }
-    if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
-    } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
-    }
-};
-
-window.handleLogin = () => {
-    const e = document.getElementById('auth-email').value.trim();
-    const p = document.getElementById('auth-pass').value.trim();
-    const user = registeredUsers.find(u => u.email === e && u.password === p);
-    if (user) { currentUser = user; localStorage.setItem('user', JSON.stringify(currentUser)); trackUserActivity(); init(); } else { alert(uiTrans[currentLang].authFail); }
-};
-
-window.handleRegister = () => {
-    const u = document.getElementById('reg-user').value.trim();
-    const e = document.getElementById('reg-email').value.trim();
-    const p = document.getElementById('reg-pass').value.trim();
-    if (!u || !e || !p) return;
-    if (registeredUsers.some(user => user.email === e)) { alert("Email already exists"); return; }
-    const newUser = { email: e, password: p, name: u, role: e === OWNER_EMAIL ? 'admin' : 'user', lastActive: Date.now() };
-    registeredUsers.push(newUser); localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-    alert(uiTrans[currentLang].regSuccess); renderAuthUI('login');
-};
-
-// --- Actions & Modals ---
-
-window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
-
-window.toggleFavorite = (id) => {
-    checkAuthAndAction(() => {
-        const key = currentUser.email;
-        if(!userFavorites[key]) userFavorites[key] = [];
-        const idx = userFavorites[key].findIndex(f => f.id === id);
-        if(!likeCounts[id]) likeCounts[id] = 0;
-        const isCurrentlyLiked = idx !== -1;
-        if(!isCurrentlyLiked) { 
-            userFavorites[key].unshift({ id: id, likedAt: Date.now() }); 
-            likeCounts[id]++; 
-        } else { 
-            userFavorites[key].splice(idx, 1); 
-            likeCounts[id]--; 
-        }
-        localStorage.setItem('userFavorites', JSON.stringify(userFavorites)); 
-        localStorage.setItem('likeCounts', JSON.stringify(likeCounts));
-        
-        const countText = document.getElementById(`like-count-${id}`);
-        if (countText) countText.innerText = likeCounts[id];
-        
-        const btn = document.getElementById(`like-btn-${id}`);
-        if(btn) {
-            const icon = btn.querySelector('i');
-            if(icon) icon.className = isCurrentlyLiked ? 'far fa-heart opacity-50 text-xl' : 'fas fa-heart text-red-500 text-xl';
-        }
-        updateHeartUI();
-    });
-};
+// --- Logic Functions ---
 
 window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
-    const postLink = document.getElementById('post-external-link')?.value.trim() || "";
     const cat = document.getElementById('post-category').value; 
-    const durSelect = document.getElementById('post-duration');
-    const duration = durSelect.value; 
-    const durationLabel = durSelect.options[durSelect.selectedIndex].text;
+    const duration = document.getElementById('post-duration').value;
     
     if(!title && !desc && !tempMedia.url) return;
     
@@ -365,105 +245,163 @@ window.submitPost = async () => {
         expiryDate = Date.now() + (units[duration] * 86400000); 
     }
     
-    const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
-    const userEmail = currentUser ? currentUser.email : "system";
-    
     const newPost = { 
-        id: Date.now(), title, desc, postLink, adminName, userEmail, 
+        id: Date.now(), title, desc, 
+        postLink: document.getElementById('post-external-link')?.value || "",
+        adminName: currentUser?.name || "Admin",
+        userEmail: currentUser?.email || "system", 
         lang: document.getElementById('post-lang').value, 
-        category: cat, subCategory: document.getElementById('post-sub-category').value, 
-        expiryDate, durationLabel, media: tempMedia.url 
+        category: cat, 
+        subCategory: document.getElementById('post-sub-category').value, 
+        expiryDate, 
+        durationLabel: document.getElementById('post-duration').options[document.getElementById('post-duration').selectedIndex].text,
+        media: tempMedia.url 
     };
 
     const { error } = await _supabase.from('posts').insert([newPost]);
-    
     if (!error) {
         tempMedia = { url: "", type: "" };
-        closePostModal(); 
+        closePostModal();
         await fetchPostsFromServer();
     } else {
         alert("Error: " + error.message);
     }
 };
 
-window.submitNotif = async () => {
-    const title = document.getElementById('notif-title').value; 
-    const desc = document.getElementById('notif-desc').value;
-    const lang = document.getElementById('notif-lang').value; 
-    if(!title && !desc) return;
-    
-    const newNotif = { 
-        id: Date.now(), title, desc, adminName: (currentUser?.name || "Admin"), 
-        userEmail: currentUser?.email || "system", lang, category: 'notif', 
-        media: "", expiryDate: "never", durationLabel: "Never" 
-    };
+window.deletePost = async (id) => { 
+    if(confirm('Delete?')) { 
+        const { error } = await _supabase.from('posts').delete().eq('id', id);
+        if (!error) {
+            allPosts = allPosts.filter(x => x.id !== id);
+            updateTabContent(localStorage.getItem('lastMainTab'));
+        }
+    } 
+};
 
-    const { error } = await _supabase.from('posts').insert([newNotif]);
-    if (!error) {
-        closeNotifModal(); 
-        await fetchPostsFromServer();
+window.handleLogin = () => {
+    const e = document.getElementById('auth-email').value.trim();
+    const p = document.getElementById('auth-pass').value.trim();
+    const user = registeredUsers.find(u => u.email === e && u.password === p);
+    if (user) { 
+        currentUser = user; 
+        localStorage.setItem('user', JSON.stringify(currentUser)); 
+        init(); 
+    } else { 
+        alert(uiTrans[currentLang].authFail); 
     }
 };
 
-// --- Other Utilities ---
+window.handleRegister = () => {
+    const u = document.getElementById('reg-user').value.trim();
+    const e = document.getElementById('reg-email').value.trim();
+    const p = document.getElementById('reg-pass').value.trim();
+    if (!u || !e || !p) return;
+    if (registeredUsers.some(user => user.email === e)) { alert("Exists!"); return; }
+    const newUser = { email: e, password: p, name: u, role: e === OWNER_EMAIL ? 'admin' : 'user', lastActive: Date.now() };
+    registeredUsers.push(newUser); 
+    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    renderAuthUI('login');
+};
+
+// --- UI Helpers ---
+
 function timeAgo(d) {
     const s = Math.floor((new Date() - new Date(d)) / 1000);
     const t = uiTrans[currentLang];
     if (s < 60) return t.now;
     if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
     if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
-    if (s < 604800) return Math.floor(s/86400) + "d " + t.ago;
-    if (s < 2592000) return Math.floor(s/604800) + "w " + t.ago;
-    return Math.floor(s/2592000) + "mo " + t.ago;
+    return Math.floor(s/86400) + "d " + t.ago;
 }
 
-window.deletePost = async (id) => { 
-    if(confirm('Delete?')) { 
-        const { error } = await _supabase.from('posts').delete().eq('id', id);
-        if (!error) {
-            allPosts = allPosts.filter(x => x.id !== id);
-            init(); 
+function formatFullDate(ts) {
+    const d = new Date(ts);
+    return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+}
+
+window.changeTab = (tab, el) => { 
+    closeHeartMenu(); 
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
+    if(el) el.classList.add('active'); 
+    localStorage.setItem('lastMainTab', tab);
+    updateTabContent(tab); 
+};
+
+window.toggleFavorite = (id) => {
+    checkAuthAndAction(() => {
+        const key = currentUser.email;
+        if(!userFavorites[key]) userFavorites[key] = [];
+        const idx = userFavorites[key].findIndex(f => f.id === id);
+        if(!likeCounts[id]) likeCounts[id] = 0;
+        if(idx === -1) { 
+            userFavorites[key].unshift({ id, likedAt: Date.now() }); 
+            likeCounts[id]++; 
+        } else { 
+            userFavorites[key].splice(idx, 1); 
+            likeCounts[id]--; 
         }
-    } 
+        localStorage.setItem('userFavorites', JSON.stringify(userFavorites)); 
+        localStorage.setItem('likeCounts', JSON.stringify(likeCounts));
+        updateTabContent(localStorage.getItem('lastMainTab'));
+        updateHeartUI();
+    });
 };
 
-// --- Helper Functions (Existing) ---
-window.showFavorites = (type) => {
-    currentFavTab = type; document.querySelectorAll('.fav-nav-btn').forEach(b => b.classList.remove('active'));
-    const btnId = type === 'post' ? 'btn-fav-post' : 'btn-fav-notif';
-    const btn = document.getElementById(btnId);
-    if(btn) btn.classList.add('active');
-    let favData = userFavorites[currentUser?.email] || []; 
-    favData.sort((a,b) => b.likedAt - a.likedAt);
-    const items = favData.map(f => allPosts.find(p => p.id === f.id)).filter(p => p && (type === 'post' ? p.category !== 'notif' : p.category === 'notif'));
-    const favDisplay = document.getElementById('fav-items-display');
-    if(favDisplay) favDisplay.innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
-};
+// --- Modals & Toggles ---
 
-window.openAdminStats = () => { const modal = document.getElementById('admin-stats-modal'); if(modal) modal.style.display = 'flex'; filterUserList('all'); };
-window.closeAdminStats = () => { const modal = document.getElementById('admin-stats-modal'); if(modal) modal.style.display = 'none'; };
-window.filterUserList = (filterType) => { renderUsers((filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (Date.now() - u.lastActive) < 300000)); updateCounters(); };
-function renderUsers(users) { const list = document.getElementById('admin-user-list'); if(!list) return; list.innerHTML = users.map(u => `<div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade"><div><span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span><br><span class="text-[10px] opacity-40">${u.email}</span></div></div>`).join(''); }
-function updateCounters() { document.getElementById('stat-total-users').innerText = registeredUsers.length; }
+window.openPostModal = () => document.getElementById('post-modal').style.display = 'flex';
+window.closePostModal = () => document.getElementById('post-modal').style.display = 'none';
+window.openComments = (id) => { activeCommentPostId = id; document.getElementById('comment-modal').style.display = 'flex'; renderComments(); };
+window.closeCommentModal = () => document.getElementById('comment-modal').style.display = 'none';
+window.openLangMenu = () => document.getElementById('lang-overlay').style.display = 'flex';
+window.closeLangMenu = () => document.getElementById('lang-overlay').style.display = 'none';
+window.closeHeartMenu = () => document.getElementById('heart-overlay').style.display = 'none';
 window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
 window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
 window.toggleDarkMode = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
 window.updateHeartUI = () => { const h = document.getElementById('main-heart'); if(h) h.className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
-window.closeLangMenu = () => { document.getElementById('lang-overlay').style.display = 'none'; };
-window.openLangMenu = () => { document.getElementById('lang-overlay').style.display = 'flex'; };
-window.openPostModal = () => { document.getElementById('post-modal').style.display = 'flex'; };
-window.closePostModal = () => { document.getElementById('post-modal').style.display = 'none'; };
-window.openNotifModal = () => { document.getElementById('notif-modal').style.display = 'flex'; };
-window.closeNotifModal = () => { document.getElementById('notif-modal').style.display = 'none'; };
-window.closeCommentModal = () => { document.getElementById('comment-modal').style.display='none'; };
-window.closeHeartMenu = () => { document.getElementById('heart-overlay').style.display='none'; };
+window.updateBossIcon = () => { const b = document.getElementById('boss-admin-icon'); if(b) b.style.display = (currentUser?.email === OWNER_EMAIL) ? 'block' : 'none'; };
 window.openCloudinaryWidget = () => { cloudinary.openUploadWidget({ cloudName: "dbttb8vmg", uploadPreset: "Hellowuk" }, (err, res) => { if (res.event === "success") { tempMedia.url = res.info.secure_url; document.getElementById('upload-status').innerText = "✅"; } }); };
-window.updateSubSelect = (cat) => { const s = document.getElementById('post-sub-category'); if (s && ['info', 'market', 'discount'].includes(cat)) { s.style.display = 'block'; s.innerHTML = subCategories[cat][currentLang].map(i => `<option value="${i}">${i}</option>`).join(''); } else if(s) s.style.display = 'none'; };
-window.toggleNotifScreenStatus = () => { notifOnScreen = !notifOnScreen; localStorage.setItem('notifOnScreen', notifOnScreen); updateNotifToggleUI(); };
-function updateNotifToggleUI() { const i = document.getElementById('notif-toggle-icon'); if(i) i.className = (notifOnScreen ? 'fas fa-bell' : 'far fa-bell') + " text-2xl"; }
-window.checkAuthAndAction = (cb) => { if(!currentUser) { goToAccountTab(); } else { cb(); } };
-function goToAccountTab() { changeTab('account', document.getElementById('nav-btn-account')); }
-function trackUserActivity() { if (currentUser) { let idx = registeredUsers.findIndex(u => u.email === currentUser.email); if (idx !== -1) registeredUsers[idx].lastActive = Date.now(); localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); } }
+
+function cleanExpiredPostsLocally() {
+    const now = Date.now();
+    allPosts = allPosts.filter(p => (!p.expiryDate || p.expiryDate === "never") ? true : now < p.expiryDate);
+}
+
+function trackUserActivity() {
+    if (currentUser) {
+        let idx = registeredUsers.findIndex(u => u.email === currentUser.email);
+        if (idx !== -1) registeredUsers[idx].lastActive = Date.now();
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    }
+}
+
+function getHideBtn(type, value) {
+    if (!(currentUser && currentUser.email === OWNER_EMAIL)) return "";
+    const isHidden = hiddenItems[type].includes(value);
+    return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer" onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
+}
+
+window.toggleHideItem = (type, value, event) => {
+    event.stopPropagation();
+    if (hiddenItems[type].includes(value)) {
+        hiddenItems[type] = hiddenItems[type].filter(i => i !== value);
+    } else {
+        hiddenItems[type].push(value);
+    }
+    localStorage.setItem('hiddenItems', JSON.stringify(hiddenItems));
+    init();
+};
+
 function checkNewNotifs() {}
+function updateNotifToggleUI() {}
+function ensureOwnerAccount() {
+    if (!registeredUsers.some(u => u.email === OWNER_EMAIL)) {
+        registeredUsers.push({ email: OWNER_EMAIL, password: 'belal5171', name: 'Belal', role: 'admin', lastActive: Date.now() });
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    }
+}
+
+window.checkAuthAndAction = (cb) => { if(!currentUser) { changeTab('account', document.getElementById('nav-btn-account')); } else { cb(); } };
 
 document.addEventListener('DOMContentLoaded', init);
