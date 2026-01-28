@@ -32,7 +32,10 @@ async function syncPostsWithServer() {
 
     if (!error && data) {
         allPosts = data;
-        updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+        // دڵنیابوونەوە لەوەی دوای هاتنی داتا تەبەکە نوێ دەبێتەوە
+        const currentTab = localStorage.getItem('lastMainTab') || 'news';
+        updateTabContent(currentTab);
+        updateUIScript();
     }
 }
 
@@ -64,12 +67,13 @@ const subCategories = {
 async function init() {
     ensureOwnerAccount();
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    
+    // هێنانەوەی پۆستەکان سەرەتا
+    await syncPostsWithServer();
+    
     updateUIScript();
     updateHeartUI();
     updateBossIcon();
-    
-    // هێنانەوەی پۆستەکان لە سێرڤەرەوە
-    await syncPostsWithServer();
     
     const lastMain = localStorage.getItem('lastMainTab') || 'news';
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
@@ -160,7 +164,8 @@ window.updateUIScript = () => {
                     if (existing) existing.remove();
                     btn.insertAdjacentHTML('beforeend', getHideBtn('navs', k));
                 } else {
-                    btn.style.display = (hasAnyPosts && !isHiddenByBoss) ? 'flex' : 'none';
+                    // لابردنی مەرجی hasAnyPosts بۆ ئەوەی دوگمەکە دیار بێت تەنانەت ئەگەر میوانیش بێت
+                    btn.style.display = (!isHiddenByBoss) ? 'flex' : 'none';
                 }
             }
         }
@@ -177,7 +182,7 @@ window.updateTabContent = (tab) => {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
             const isHiddenByBoss = hiddenItems.factions.includes(sub);
             if (isBoss) return true;
-            return !isHiddenByBoss && allPosts.some(p => p.category === tab && p.subCategory === sub && p.lang === currentLang);
+            return !isHiddenByBoss; 
         });
 
         if (availableSubs.length > 0) {
@@ -217,7 +222,7 @@ function formatFullDate(ts) {
 }
 
 window.renderPostHTML = (p) => {
-    const favList = userFavorites[currentUser?.email] || [];
+    const favList = currentUser ? (userFavorites[currentUser.email] || []) : [];
     const isLiked = favList.some(f => f.id === p.id);
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
@@ -347,7 +352,7 @@ window.showFavorites = (type) => {
     currentFavTab = type; document.querySelectorAll('.fav-nav-btn').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById(type === 'post' ? 'btn-fav-post' : 'btn-fav-notif');
     if(btn) btn.classList.add('active');
-    let favData = userFavorites[currentUser?.email] || []; favData.sort((a,b) => b.likedAt - a.likedAt);
+    let favData = currentUser ? (userFavorites[currentUser.email] || []) : []; favData.sort((a,b) => b.likedAt - a.likedAt);
     const items = favData.map(f => allPosts.find(p => p.id === f.id)).filter(p => p && (type === 'post' ? p.category !== 'notif' : p.category === 'notif'));
     document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
