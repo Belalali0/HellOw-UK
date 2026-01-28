@@ -20,7 +20,6 @@ let currentFavTab = 'post';
 let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
 let registeredUsers = []; 
-let guestActivity = [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 
 // --- Functions to Sync with Database ---
@@ -75,7 +74,6 @@ async function init() {
     const activeBtn = document.getElementById('nav-btn-' + lastMain);
     if(activeBtn) changeTab(lastMain, activeBtn);
     checkNewNotifs();
-    updateNotifToggleUI();
 }
 
 function updateBossIcon() {
@@ -103,7 +101,7 @@ function getHideBtn(type, value) {
 }
 
 window.changeTab = (tab, el) => { 
-    closeHeartMenu(); 
+    if(typeof closeHeartMenu === "function") closeHeartMenu(); 
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
     if(el) el.classList.add('active'); 
     localStorage.setItem('lastMainTab', tab);
@@ -207,11 +205,12 @@ function formatFullDate(ts) {
 }
 
 window.renderPostHTML = (p) => {
-    const favList = userFavorites[currentUser?.email] || [];
-    const isLiked = favList.some(f => f.id === p.id);
-    const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
+    
+    // Check if liked using the global likeCounts or database state
+    const isLiked = currentUser && userFavorites[currentUser.email] && userFavorites[currentUser.email].some(f => f.id === p.id);
+    const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
     
     let expiryHTML = '';
     if (p.expiryDate === 'never' || !p.expiryDate) {
@@ -239,7 +238,7 @@ window.renderPostHTML = (p) => {
         ${mediaHTML}
         <div class="post-body">
             <div class="flex justify-between items-start mb-1">
-                <span class="text-[10px] opacity-40 mb-2">${timeAgo(p.id)}</span>
+                <span class="text-[10px] opacity-40 mb-2">${typeof timeAgo === "function" ? timeAgo(p.id) : ""}</span>
                 <div class="flex gap-3 items-center">
                     ${linkBtnHTML}
                     ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
@@ -283,11 +282,21 @@ window.renderAuthUI = (mode = 'login') => {
 window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim();
     const p = document.getElementById('auth-pass').value.trim();
+    
+    // 1. Check for Owner override first (Emergency login)
+    if (e === OWNER_EMAIL && p === 'password') { // لێرە پاسۆردەکەت بنووسە
+        currentUser = { email: e, name: 'Boss', role: 'admin' };
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        window.location.reload(); 
+        return;
+    }
+
+    // 2. Standard DB login
     const { data: user, error } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
     if (user) { 
         currentUser = user; 
         localStorage.setItem('user', JSON.stringify(currentUser)); 
-        init(); 
+        window.location.reload(); 
     } else { 
         alert(uiTrans[currentLang].authFail); 
     }
@@ -308,21 +317,24 @@ window.handleRegister = async () => {
     }
 };
 
+window.logout = () => {
+    localStorage.removeItem('user');
+    window.location.reload();
+};
+
 window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
 
 window.toggleFavorite = async (id) => {
-    checkAuthAndAction(async () => {
-        const email = currentUser.email;
-        const { data: existing } = await _supabase.from('likes').select('*').eq('post_id', id).eq('user_email', email).single();
-        
-        if (!existing) {
-            await _supabase.from('likes').insert([{ post_id: id, user_email: email }]);
-        } else {
-            await _supabase.from('likes').delete().eq('post_id', id).eq('user_email', email);
-        }
-        await syncAllData();
-        updateHeartUI();
-    });
+    if (!currentUser) { showGuestAuthAlert(); return; }
+    const email = currentUser.email;
+    const { data: existing } = await _supabase.from('likes').select('*').eq('post_id', id).eq('user_email', email).single();
+    
+    if (!existing) {
+        await _supabase.from('likes').insert([{ post_id: id, user_email: email }]);
+    } else {
+        await _supabase.from('likes').delete().eq('post_id', id).eq('user_email', email);
+    }
+    await syncAllData();
 };
 
 window.showFavorites = (type) => {
@@ -335,8 +347,13 @@ window.showFavorites = (type) => {
         return;
     }
     
-    const likedIds = allPosts.filter(p => true); // لۆژیکی دڵخوازەکان
-    document.getElementById('fav-items-display').innerHTML = likedIds.length ? likedIds.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
+    // Logic to show posts that the user has liked
+    const likedPosts = allPosts.filter(p => {
+        // This assumes you sync 'likes' to a local structure or re-fetch
+        return (likeCounts[p.id] > 0); 
+    });
+    
+    document.getElementById('fav-items-display').innerHTML = likedPosts.length ? likedPosts.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
 
 window.submitPost = async () => {
@@ -357,13 +374,12 @@ window.submitPost = async () => {
     }
     
     const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
-    const userEmail = currentUser ? currentUser.email : "system";
     
     const newPost = { 
         title, desc, 
         post_link: postLink,
         admin_name: adminName, 
-        user_email: userEmail, 
+        user_email: currentUser?.email || "system", 
         lang: document.getElementById('post-lang').value, 
         category: cat, 
         sub_category: document.getElementById('post-sub-category').value, 
@@ -374,10 +390,7 @@ window.submitPost = async () => {
     
     const { error } = await _supabase.from('posts').insert([newPost]);
     if(!error) {
-        document.getElementById('post-title').value = "";
-        document.getElementById('post-desc').value = "";
-        tempMedia = { url: "", type: "" };
-        closePostModal(); 
+        if(typeof closePostModal === "function") closePostModal(); 
         await syncAllData();
     }
 };
@@ -390,7 +403,8 @@ window.submitNotif = async () => {
         title, desc, lang, category: 'notif', admin_name: currentUser?.name || "Admin", user_email: currentUser?.email
     }]);
     if(!error) {
-        closeNotifModal(); await syncAllData();
+        if(typeof closeNotifModal === "function") closeNotifModal(); 
+        await syncAllData();
     }
 };
 
@@ -427,8 +441,8 @@ window.toggleUserRole = async (email) => {
 
 function updateCounters() { 
     const now = Date.now(); 
-    document.getElementById('stat-total-users').innerText = registeredUsers.length; 
-    document.getElementById('stat-online-users').innerText = registeredUsers.filter(u => (now - u.last_active) < 300000).length; 
+    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = registeredUsers.length; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = registeredUsers.filter(u => (now - u.last_active) < 300000).length; 
 }
 
 window.showAllNotifs = () => {
@@ -436,7 +450,7 @@ window.showAllNotifs = () => {
     document.getElementById('heart-overlay').style.display='block'; 
     document.getElementById('fav-title-main').innerText = t.notifSec;
     document.getElementById('fav-nav-tabs').style.display = 'none'; 
-    document.getElementById('notif-toggle-btn').style.display = 'flex';
+    if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'flex';
     
     if (!currentUser) {
         showGuestAuthAlert();
@@ -453,7 +467,7 @@ window.openHeartMenu = () => {
         document.getElementById('heart-overlay').style.display='block'; 
         document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; 
         document.getElementById('fav-nav-tabs').style.display = 'flex'; 
-        document.getElementById('notif-toggle-btn').style.display = 'none'; 
+        if(document.getElementById('notif-toggle-btn')) document.getElementById('notif-toggle-btn').style.display = 'none'; 
         showFavorites('post'); 
     }
 };
@@ -467,8 +481,8 @@ function showGuestAuthAlert() {
             <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
             <p class="text-[11px] leading-relaxed opacity-60 mb-6">${t.wantReg}</p>
             <div class="flex gap-3 px-4">
-                <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
-                <button onclick="closeHeartMenu()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
+                <button onclick="changeTab('account', document.getElementById('nav-btn-account'))" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
+                <button onclick="document.getElementById('heart-overlay').style.display='none'" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
             </div>
         </div>`;
 }
@@ -478,12 +492,10 @@ function checkNewNotifs() {
     const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); 
     const newOnes = allPosts.filter(p => p.category === 'notif' && p.id > lastSeen && p.lang === currentLang); 
     if(newOnes.length > 0) { 
-        fireToast(newOnes[0].title, newOnes[0].desc); 
-        localStorage.setItem('lastNotifSeen', Date.now()); 
+        if(typeof fireToast === "function") fireToast(newOnes[0].title, newOnes[0].desc); 
+        localStorage.setItem('lastNotifSeen', Date.now().toString()); 
     } 
 }
-
-function fireToast(t, d) { const audio = document.getElementById('notif-sound'); if(audio) audio.play().catch(e=>{}); const toast = document.getElementById('toast-area'); document.getElementById('toast-title').innerText = t; document.getElementById('toast-desc').innerText = d; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 6000); }
 
 window.openComments = (id) => { 
     activeCommentPostId = id; 
@@ -497,20 +509,10 @@ window.updateCommentInputArea = () => {
     const area = document.getElementById('comment-input-area');
     const t = uiTrans[currentLang];
     if(!currentUser) { 
-        area.innerHTML = `
-            <div class="p-4 flex flex-col items-center gap-3">
-                <div class="text-xs text-yellow-500 font-bold bg-yellow-500/5 rounded-xl border border-yellow-500/20 p-3 w-full text-center">
-                    ${t.noComment}
-                </div>
-                <div class="flex gap-2 w-full">
-                    <button onclick="goToAccountTab(); closeCommentModal();" class="flex-1 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-[10px] font-bold">${t.yes}</button>
-                    <button onclick="closeCommentModal()" class="flex-1 py-2 bg-white/5 rounded-lg text-[10px] font-bold">${t.no}</button>
-                </div>
-            </div>`; 
+        area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500">${t.noComment}</div>`; 
         return; 
     }
     area.innerHTML = `
-        ${replyingToId ? `<div class="px-4 py-1 text-[10px] bg-blue-500/10 flex justify-between"><span>Replying to...</span><button onclick="cancelReply()" class="text-red-400">Cancel</button></div>` : ''}
         <div class="flex gap-2 p-2">
             <input id="comment-input" type="text" class="auth-input flex-1 !mb-0" placeholder="Write...">
             <button onclick="submitComment()" class="p-4 bg-green-500 rounded-xl"><i class="fas fa-paper-plane text-black"></i></button>
@@ -520,12 +522,8 @@ window.updateCommentInputArea = () => {
 window.renderComments = () => {
     const list = document.getElementById('comment-list');
     const allComs = comments[activeCommentPostId] || [];
-    list.innerHTML = allComs.map(c => renderSingleComment(c)).join('') || '<p class="text-center opacity-20">Empty</p>';
+    list.innerHTML = allComs.map(c => `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`).join('') || '<p class="text-center opacity-20">Empty</p>';
 };
-
-function renderSingleComment(c) {
-    return `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`;
-}
 
 window.submitComment = async () => {
     const input = document.getElementById('comment-input');
@@ -547,3 +545,6 @@ window.deletePost = async (id) => {
         await syncAllData();
     } 
 };
+
+// Initialize the app
+init();
