@@ -39,7 +39,7 @@
 
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
 
-    <div id="toast-area" class="toast-notif" onclick="showAllNotifs()">
+    <div id="toast-area" class="toast-notif" onclick="window.showAllNotifs()">
         <div class="glass-card-strong p-4 flex items-center gap-3 border border-white/20 shadow-2xl rounded-3xl cursor-pointer">
             <div class="bg-blue-600 w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-bell"></i></div>
             <div class="flex-1">
@@ -51,49 +51,38 @@
  
     <header class="header-main glass-card">
         <div class="header-side side-right">
-            <div class="top-btn" onclick="toggleTheme()"><i id="theme-icon" class="fas fa-sun text-yellow-400"></i></div>
-            <div class="top-btn lang-pill" onclick="openLangMenu()"><span id="active-lang-code">KU</span></div>
+            <div class="top-btn" onclick="window.toggleDarkMode()"><i id="theme-icon" class="fas fa-sun text-yellow-400"></i></div>
+            <div class="top-btn lang-pill" onclick="window.openLangMenu()"><span id="active-lang-code">KU</span></div>
         </div>
-        <div class="header-center"><div class="glass-logo" onclick="toggleAdminBar()"><span style="color:#ff4d4d">He</span><span>ll</span><i class="fas fa-sun logo-sun"></i><span>w</span><span style="color:#4ade80">UK</span></div></div>
+        <div class="header-center"><div class="glass-logo" onclick="window.toggleAdminBar()"><span style="color:#ff4d4d">He</span><span>ll</span><i class="fas fa-sun logo-sun"></i><span>w</span><span style="color:#4ade80">UK</span></div></div>
         <div class="header-side side-left">
-            <div class="top-btn" onclick="checkAuthAndAction(showAllNotifs)"><i id="main-bell-icon" class="fas fa-bell text-blue-400"></i></div>
-            <div class="top-btn" onclick="checkAuthAndAction(openHeartMenu)"><i id="main-heart" class="fas fa-heart-broken heart-black"></i></div>
+            <div class="top-btn" onclick="window.showAllNotifs()"><i id="main-bell-icon" class="fas fa-bell text-blue-400"></i></div>
+            <div class="top-btn" onclick="window.openHeartMenu()"><i id="main-heart" class="fas fa-heart text-red-500"></i></div>
         </div>
     </header>
 
-    <div id="admin-stats-modal" class="lang-overlay" style="display: none;" onclick="closeAdminStats()">
+    <div id="admin-stats-modal" class="lang-overlay" style="display: none;" onclick="window.closeAdminStats()">
         <div class="lang-modal glass-card-strong animate-fade w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
             <div class="p-6">
-                <div class="flex justify-between items-center mb-6"><button onclick="closeAdminStats()" class="text-red-400 text-lg"><i class="fas fa-times-circle"></i></button><h3 class="text-xl font-bold text-green-400">Dashboard</h3></div>
+                <div class="flex justify-between items-center mb-6"><button onclick="window.closeAdminStats()" class="text-red-400 text-lg"><i class="fas fa-times-circle"></i></button><h3 class="text-xl font-bold text-green-400">Dashboard</h3></div>
                 <div class="grid grid-cols-3 gap-2 mb-6 text-[10px]">
-                    <div id="btn-stat-all" class="stat-card active" onclick="filterUserList('all')"><span class="opacity-50 block">Users</span><b id="stat-total-users" class="text-lg text-blue-400">0</b></div>
-                    <div id="btn-stat-online" class="stat-card" onclick="filterUserList('online')"><span class="opacity-50 block">Online</span><b id="stat-online-users" class="text-lg text-green-400">0</b></div>
-                    <div id="btn-stat-guest" class="stat-card" onclick="filterUserList('guest')"><span class="opacity-50 block">Guest</span><b id="stat-guest-users" class="text-lg text-yellow-400">0</b></div>
+                    <div id="btn-stat-all" class="stat-card active" onclick="window.filterUserList('all')"><span class="opacity-50 block">Users</span><b id="stat-total-users" class="text-lg text-blue-400">0</b></div>
+                    <div id="btn-stat-online" class="stat-card" onclick="window.filterUserList('online')"><span class="opacity-50 block">Online</span><b id="stat-online-users" class="text-lg text-green-400">0</b></div>
+                    <div id="btn-stat-guest" class="stat-card" onclick="window.filterUserList('guest')"><span class="opacity-50 block">Guest</span><b id="stat-guest-users" class="text-lg text-yellow-400">0</b></div>
                 </div>
-                <input id="user-search-input" oninput="searchUsers(this.value)" type="text" class="auth-input" placeholder="Search...">
+                <input id="user-search-input" oninput="window.searchUsers(this.value)" type="text" class="auth-input" placeholder="Search...">
             </div>
             <div id="admin-user-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3"></div>
         </div>
     </div>
 
-    <div id="auth-alert-modal" class="lang-overlay" style="display: none; z-index: 9999;">
-        <div class="lang-modal glass-card-strong animate-fade text-center p-6" style="max-width: 320px;">
-            <i class="fas fa-user-lock text-4xl text-yellow-500 mb-4"></i>
-            <p id="auth-alert-msg" class="text-sm font-bold mb-6"></p>
-            <div class="flex gap-3">
-                <button id="auth-yes-btn" onclick="goToAccountTab()" class="auth-submit !mb-0 !bg-green-600 flex-1"></button>
-                <button id="auth-no-btn" onclick="closeAuthAlert()" class="auth-submit !mb-0 !bg-white/10 flex-1"></button>
-            </div>
-        </div>
-    </div>
-
     <div id="admin-quick-bar" class="admin-top-bar animate-fade" style="display: none;">
-        <div class="admin-btn" onclick="openPostModal()"><i class="fas fa-plus-circle"></i><span>Post</span></div>
-        <div class="admin-btn" onclick="openNotifModal()"><i class="fas fa-bell"></i><span>Notif</span></div>
-        <div class="admin-btn" onclick="openAdminStats()"><i class="fas fa-chart-line"></i><span>Stats</span></div>
+        <div class="admin-btn" onclick="window.openPostModal()"><i class="fas fa-plus-circle"></i><span>Post</span></div>
+        <div class="admin-btn" onclick="window.openNotifModal()"><i class="fas fa-bell"></i><span>Notif</span></div>
+        <div class="admin-btn" onclick="window.openAdminStats()"><i class="fas fa-chart-line"></i><span>Stats</span></div>
     </div>
 
-    <div id="notif-modal" class="lang-overlay" style="display: none;" onclick="closeNotifModal()">
+    <div id="notif-modal" class="lang-overlay" style="display: none;" onclick="window.closeNotifModal()">
         <div class="lang-modal glass-card-strong animate-fade relative" style="max-width: 450px; width: 95%;" onclick="event.stopPropagation()">
             <h3 class="text-xl font-bold mb-4 text-blue-400">New Notification</h3>
             <div class="flex flex-col gap-3">
@@ -102,26 +91,25 @@
                 <select id="notif-lang" class="auth-input !p-2 !text-xs">
                     <option value="ku">Kurdî</option><option value="en">English</option><option value="ar">العربية</option><option value="fa">فارسی</option>
                 </select>
-                <button class="auth-submit !bg-blue-500" onclick="submitNotif()">Send</button>
+                <button class="auth-submit !bg-blue-500" onclick="window.submitNotif()">Send</button>
             </div>
         </div>
     </div>
 
-    <div id="post-modal" class="lang-overlay" style="display: none;" onclick="closePostModal()">
+    <div id="post-modal" class="lang-overlay" style="display: none;" onclick="window.closePostModal()">
         <div class="lang-modal glass-card-strong animate-fade relative" style="max-width: 450px; width: 95%;" onclick="event.stopPropagation()">
             <h3 class="text-xl font-bold mb-4 text-green-400">New Post</h3>
             <div class="flex flex-col gap-3">
                 <input id="post-title" type="text" class="auth-input" placeholder="Title">
                 <textarea id="post-desc" class="auth-input h-24" placeholder="Description"></textarea>
                 <input id="post-external-link" type="text" class="auth-input" placeholder="External Link (Optional)">
-                
-                <button onclick="openCloudinaryWidget()" class="auth-input !border-dashed !border-green-500 text-sm">Upload Media</button>
+                <button onclick="window.openCloudinaryWidget()" class="auth-input !border-dashed !border-green-500 text-sm">Upload Media</button>
                 <p id="upload-status" class="text-[10px] text-center text-green-400"></p>
                 <div class="flex gap-2">
-                    <select id="post-lang" class="auth-input flex-1 !p-2 !text-xs" onchange="updateSubSelect(document.getElementById('post-category').value)">
+                    <select id="post-lang" class="auth-input flex-1 !p-2 !text-xs">
                         <option value="ku">Kurdî</option><option value="en">English</option><option value="ar">العربية</option><option value="fa">فارسی</option>
                     </select>
-                    <select id="post-category" class="auth-input flex-1 !p-2 !text-xs" onchange="updateSubSelect(this.value)">
+                    <select id="post-category" class="auth-input flex-1 !p-2 !text-xs">
                         <option value="news">News</option><option value="info">Info</option><option value="market">Market</option><option value="discount">Discount</option>
                     </select>
                 </div>
@@ -132,14 +120,14 @@
                         <option value="never">Never</option><option value="1w">1 Week</option><option value="2w">2 Weeks</option><option value="3w">3 Weeks</option><option value="1m">1 Month</option><option value="2m">2 Months</option><option value="3m">3 Months</option>
                     </select>
                 </div>
-                <button class="auth-submit !bg-green-500" onclick="submitPost()">Submit</button>
+                <button class="auth-submit !bg-green-500" onclick="window.submitPost()">Submit</button>
             </div>
         </div>
     </div>
 
-    <div id="comment-modal" class="lang-overlay" style="display: none; z-index: 2500;" onclick="closeCommentModal()">
+    <div id="comment-modal" class="lang-overlay" style="display: none; z-index: 2500;" onclick="window.closeCommentModal()">
         <div class="lang-modal glass-card-strong animate-fade w-full max-w-md h-[80vh] flex flex-col" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4"><button onclick="closeCommentModal()" class="text-xs opacity-50 underline">Close</button><h3 class="text-lg font-bold">Comments</h3></div>
+            <div class="flex justify-between items-center mb-4"><button onclick="window.closeCommentModal()" class="text-xs opacity-50 underline">Close</button><h3 class="text-lg font-bold">Comments</h3></div>
             <div id="comment-list" class="flex-1 overflow-y-auto mb-4 space-y-4 p-2"></div>
             <div id="comment-input-area"></div>
         </div>
@@ -147,18 +135,17 @@
 
     <div id="heart-overlay" class="fav-full-page animate-fade" style="display: none;">
         <div class="p-4 h-full flex flex-col relative">
-             <div id="notif-toggle-btn" class="absolute top-4 left-4 z-50 flex flex-col items-center cursor-pointer text-blue-400" onclick="toggleNotifScreenStatus()" style="display:none;"><i id="notif-toggle-icon" class="fas fa-bell text-2xl"></i><span id="notif-status-text" class="text-[9px] font-bold uppercase mt-1">ON</span></div>
              <div class="fav-header-title" id="fav-title-main">Favorites</div>
              <div id="fav-nav-tabs" class="fav-top-nav">
-                <button id="btn-fav-post" class="fav-nav-btn active" onclick="showFavorites('post')"><i class="fas fa-clone"></i> <span id="fav-txt-p">Posts</span></button>
-                <button id="btn-fav-notif" class="fav-nav-btn" onclick="showFavorites('notif')"><i class="fas fa-bell"></i> <span id="fav-txt-n">Notif</span></button>
+                <button id="btn-fav-post" class="fav-nav-btn active" onclick="window.showFavorites('post')"><i class="fas fa-clone"></i> <span>Posts</span></button>
+                <button id="btn-fav-notif" class="fav-nav-btn" onclick="window.showFavorites('notif')"><i class="fas fa-bell"></i> <span>Notif</span></button>
              </div>
              <div id="fav-items-display" class="mt-4 flex-1 overflow-y-auto pb-20"></div>
-             <button onclick="closeHeartMenu()" class="close-fav-btn"><i class="fas fa-times"></i></button>
+             <button onclick="window.closeHeartMenu()" class="close-fav-btn"><i class="fas fa-times"></i></button>
         </div>
     </div>
 
-    <div id="lang-overlay" class="lang-overlay" onclick="closeLangMenu()"><div class="lang-modal glass-card-strong animate-fade" onclick="event.stopPropagation()"><div class="lang-grid"><button onclick="changeLanguage('ku')" class="lang-btn-glass">Kurdî</button><button onclick="changeLanguage('en')" class="lang-btn-glass">English</button><button onclick="changeLanguage('ar')" class="lang-btn-glass">العربية</button><button onclick="changeLanguage('fa')" class="lang-btn-glass">فارسی</button></div></div></div>
+    <div id="lang-overlay" class="lang-overlay" onclick="window.closeLangMenu()"><div class="lang-modal glass-card-strong animate-fade" onclick="event.stopPropagation()"><div class="lang-grid"></div></div></div>
 
     <main class="content-area p-4 pb-24">
         <div id="sub-nav-container" class="sub-nav-container"><div id="sub-nav-bar" class="sub-nav-bar"></div></div>
@@ -166,13 +153,13 @@
     </main>
 
     <nav class="nav-bottom glass-card">
-        <button id="nav-btn-news" onclick="changeTab('news', this)" class="nav-item active"><i class="fas fa-th-large"></i><span id="nav-news"></span></button>
-        <button id="nav-btn-info" onclick="changeTab('info', this)" class="nav-item"><i class="fas fa-lightbulb"></i><span id="nav-info"></span></button>
-        <button id="nav-btn-market" onclick="changeTab('market', this)" class="nav-item"><i class="fas fa-store"></i><span id="nav-market"></span></button>
-        <button id="nav-btn-discount" onclick="changeTab('discount', this)" class="nav-item"><i class="fas fa-tag"></i><span id="nav-discount"></span></button>
-        <button id="nav-btn-account" onclick="changeTab('account', this)" class="nav-item"><i class="fas fa-user-astronaut"></i><span id="nav-account"></span></button>
+        <button id="nav-btn-news" onclick="window.changeTab('news', this)" class="nav-item active"><i class="fas fa-th-large"></i><span id="nav-news"></span></button>
+        <button id="nav-btn-info" onclick="window.changeTab('info', this)" class="nav-item"><i class="fas fa-lightbulb"></i><span id="nav-info"></span></button>
+        <button id="nav-btn-market" onclick="window.changeTab('market', this)" class="nav-item"><i class="fas fa-store"></i><span id="nav-market"></span></button>
+        <button id="nav-btn-discount" onclick="window.changeTab('discount', this)" class="nav-item"><i class="fas fa-tag"></i><span id="nav-discount"></span></button>
+        <button id="nav-btn-account" onclick="window.changeTab('account', this)" class="nav-item"><i class="fas fa-user-astronaut"></i><span id="nav-account"></span></button>
     </nav>
-<script src="script.js?v=1.1"></script>
+
+    <script src="script.js?v=1.2"></script>
 </body>
-                    </html>
-                
+</html>
