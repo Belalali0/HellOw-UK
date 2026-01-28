@@ -61,6 +61,8 @@
         </div>
     </header>
 
+    <div id="auth-alert-modal" class="lang-overlay" style="display: none;" onclick="window.closeAuthAlert()"></div>
+
     <div id="admin-stats-modal" class="lang-overlay" style="display: none;" onclick="window.closeAdminStats()">
         <div class="lang-modal glass-card-strong animate-fade w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
             <div class="p-6">
@@ -106,11 +108,11 @@
                 <button onclick="window.openCloudinaryWidget()" class="auth-input !border-dashed !border-green-500 text-sm">Upload Media</button>
                 <p id="upload-status" class="text-[10px] text-center text-green-400"></p>
                 <div class="flex gap-2">
+                    <select id="post-category" class="auth-input flex-1 !p-2 !text-xs" onchange="window.updateSubSelect(this.value)">
+                        <option value="news">News</option><option value="info">Info</option><option value="market">Market</option><option value="discount">Discount</option>
+                    </select>
                     <select id="post-lang" class="auth-input flex-1 !p-2 !text-xs">
                         <option value="ku">Kurdî</option><option value="en">English</option><option value="ar">العربية</option><option value="fa">فارسی</option>
-                    </select>
-                    <select id="post-category" class="auth-input flex-1 !p-2 !text-xs">
-                        <option value="news">News</option><option value="info">Info</option><option value="market">Market</option><option value="discount">Discount</option>
                     </select>
                 </div>
                 <select id="post-sub-category" class="auth-input !p-2 !text-xs" style="display:none;"></select>
