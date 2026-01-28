@@ -28,7 +28,7 @@ async function syncPostsWithServer() {
         const { data, error } = await _supabase
             .from('posts')
             .select('*')
-            .order('id', { ascending: false });
+            .order('created_at', { ascending: false }); // بەکارهێنانی created_at لەبری id بۆ ڕیزبەندی
 
         if (error) throw error;
 
@@ -56,7 +56,7 @@ function ensureOwnerAccount() {
 }
 
 const uiTrans = {
-    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ پۆستێک نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
+    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ پۆستێک نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەتەوێت ئەکاونت دروست بکەیت؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
     en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "No posts yet", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
     ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "لا يوجد منشورات", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
     fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "پستی وجود ندارد", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
@@ -209,7 +209,8 @@ window.updateTabContent = (tab) => {
         if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
             filtered = filtered.filter(p => p.subCategory === activeSubCategory);
         }
-        filtered.sort((a,b)=>b.id-a.id);
+        // بەکارهێنانی created_at بۆ ڕیزبەندی چونکە ID لە سێرڤەرەوە دێت
+        filtered.sort((a,b)=> new Date(b.created_at || b.id) - new Date(a.created_at || a.id));
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
     }
 };
@@ -225,6 +226,7 @@ window.renderPostHTML = (p) => {
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
+    const postTime = p.created_at || p.id;
     
     let expiryHTML = '';
     if (p.expiryDate === 'never' || !p.expiryDate) {
@@ -238,7 +240,7 @@ window.renderPostHTML = (p) => {
         else if (p.category === 'discount') { expiryHTML = `<div class="flex flex-col items-end gap-1">${timeLeftLine}</div>`; }
     }
 
-    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.adminName || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(p.id)}</span></div>` : '';
+    const creatorInfo = isAdmin ? `<div class="flex flex-col items-end"><span class="admin-name-tag">By: ${p.adminName || 'Admin'}</span><span style="font-size: 8px; opacity: 0.5;">(${t.post_time}) ${formatFullDate(postTime)}</span></div>` : '';
     const commentCount = (comments[p.id] || []).length;
     
     const linkBtnHTML = p.postLink ? `
@@ -252,7 +254,7 @@ window.renderPostHTML = (p) => {
         ${mediaHTML}
         <div class="post-body">
             <div class="flex justify-between items-start mb-1">
-                <span class="text-[10px] opacity-40 mb-2">${timeAgo(p.id)}</span>
+                <span class="text-[10px] opacity-40 mb-2">${timeAgo(postTime)}</span>
                 <div class="flex gap-3 items-center">
                     ${linkBtnHTML}
                     ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
@@ -366,10 +368,10 @@ window.submitPost = async () => {
     
     if(!title && !desc && !tempMedia.url) return;
     
-    let expiryDate = "never"; 
+    let expiryDateValue = "never"; 
     if (duration !== "never") { 
         const units = { '1w': 7, '2w': 14, '3w': 21, '1m': 30, '2m': 60, '3m': 90 }; 
-        expiryDate = Date.now() + (units[duration] * 86400000); 
+        expiryDateValue = Date.now() + (units[duration] * 86400000); 
     }
     
     const adminName = currentUser ? (currentUser.name || currentUser.email.split('@')[0]) : "Admin";
@@ -384,9 +386,10 @@ window.submitPost = async () => {
         lang: document.getElementById('post-lang').value, 
         category: cat, 
         subCategory: document.getElementById('post-sub-category').value || "", 
-        expiryDate: expiryDate, 
+        expiryDate: expiryDateValue, 
         durationLabel: durationLabel, 
         media: tempMedia.url || ""
+        // تێبینی: ID لێرە نانێرین چونکە Supabase خۆی دروستی دەکات
     };
 
     try {
@@ -403,6 +406,7 @@ window.submitPost = async () => {
         await syncPostsWithServer();
     } catch (err) {
         alert("Error saving post: " + err.message);
+        console.error("Full error:", err);
     }
 };
 
@@ -424,10 +428,14 @@ window.submitNotif = async () => {
         durationLabel: "Never" 
     };
 
-    await _supabase.from('posts').insert([newNotif]);
-    closeNotifModal(); 
-    await syncPostsWithServer();
-    if(lang === currentLang && currentUser && notifOnScreen) fireToast(title || "Notif", desc || "");
+    try {
+        await _supabase.from('posts').insert([newNotif]);
+        closeNotifModal(); 
+        await syncPostsWithServer();
+        if(lang === currentLang && currentUser && notifOnScreen) fireToast(title || "Notif", desc || "");
+    } catch (err) {
+        console.error("Notif Error:", err);
+    }
 };
 
 window.openAdminStats = () => { document.getElementById('admin-stats-modal').style.display = 'flex'; filterUserList('all'); };
@@ -473,7 +481,7 @@ window.showAllNotifs = () => {
                 </div>
             </div>`;
     } else {
-        const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang).sort((a,b)=>b.id-a.id);
+        const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang).sort((a,b)=> new Date(b.created_at || b.id) - new Date(a.created_at || a.id));
         document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
     }
 };
@@ -491,7 +499,7 @@ function trackUserActivity() {
         localStorage.setItem('guestActivity', JSON.stringify(guestActivity)); 
     } 
 }
-function checkNewNotifs() { if(!currentUser) return; const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); const newOnes = allPosts.filter(p => p.category === 'notif' && p.id > lastSeen && p.lang === currentLang); if(newOnes.length > 0) { let i = 0; const inv = setInterval(() => { if(i < newOnes.length) { if(notifOnScreen) fireToast(newOnes[i].title, newOnes[i].desc); i++; } else { clearInterval(inv); localStorage.setItem('lastNotifSeen', Date.now()); } }, 1500); } }
+function checkNewNotifs() { if(!currentUser) return; const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); const newOnes = allPosts.filter(p => p.category === 'notif' && (new Date(p.created_at).getTime() || p.id) > lastSeen && p.lang === currentLang); if(newOnes.length > 0) { let i = 0; const inv = setInterval(() => { if(i < newOnes.length) { if(notifOnScreen) fireToast(newOnes[i].title, newOnes[i].desc); i++; } else { clearInterval(inv); localStorage.setItem('lastNotifSeen', Date.now()); } }, 1500); } }
 function fireToast(t, d) { const audio = document.getElementById('notif-sound'); if(audio) audio.play().catch(e=>{}); const toast = document.getElementById('toast-area'); document.getElementById('toast-title').innerText = t; document.getElementById('toast-desc').innerText = d; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 6000); }
 
 window.openComments = (id) => { activeCommentPostId = id; replyingToId = null; document.getElementById('comment-modal').style.display = 'flex'; renderComments(); updateCommentInputArea(); };
