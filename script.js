@@ -68,7 +68,8 @@ const subCategories = {
     discount: { ku: ["ڕێستۆرانت", "جلوبەرگ", "مارکێت"], en: ["Restaurant", "Clothing", "Market"], ar: ["مطعم", "ملابس", "مارکت"], fa: ["رستوران", "پوشاک", "مارکت"] }
 };
 
-// --- Header functions (چاککردنی بەشەکانی سەرەوە) ---
+// --- چاکسازی بەشی سەرەوە (Header Fixes) ---
+
 window.toggleDarkMode = () => {
     isDarkMode = !isDarkMode;
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
@@ -87,6 +88,14 @@ window.changeLanguage = (lang) => {
     if (el) el.style.display = 'none';
     updateUIScript();
     updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+};
+
+// بۆ داخستنی مینووەکان کاتێک کلیک لە دەرەوەیان دەکرێت
+window.onclick = (event) => {
+    const langOverlay = document.getElementById('lang-overlay');
+    const heartOverlay = document.getElementById('heart-overlay');
+    if (event.target == langOverlay) langOverlay.style.display = 'none';
+    if (event.target == heartOverlay) heartOverlay.style.display = 'none';
 };
 
 async function init() {
