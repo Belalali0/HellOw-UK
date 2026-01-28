@@ -20,7 +20,6 @@ const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 const OWNER_PASS = 'belal5171';
 
 // --- Functions to Sync with Database ---
-
 async function syncAllData() {
     try {
         const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
@@ -46,20 +45,16 @@ async function syncAllData() {
         const { data: usersData } = await _supabase.from('users').select('*');
         registeredUsers = usersData || [];
         
-        if (currentUser) {
-            await _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
-        }
-
         updateUIScript();
         updateTabContent(localStorage.getItem('lastMainTab') || 'news');
     } catch (e) { console.error("Sync Error:", e); }
 }
 
 const uiTrans = {
-    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ببورە ناتوانی پێویستە ئەکاونت دروست بکەیت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
-    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "Sorry, you cannot. You need to create an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
-    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "عذراً، لا يمكنك. يجب عليك إنشاء حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
-    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "ببخشید، نمی‌توانید. باید حساب کاربری بسازید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
+    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ببورە ناتوانی پێویستە ئەکاونت دروست بکەیت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئینێرجی باش بۆ ڕۆژەکەت" },
+    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notifications", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Login Required", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong credentials", regSuccess: "Account Created", post_time: "Post time:", noComment: "Login to comment", wantReg: "Create account?", notifMsg: "Good energy for your day" },
+    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "الإشعارات", login: "تسجيل الدخول", logout: "خروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "يجب تسجيل الدخول", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "خطأ في البيانات", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "سجل تعليقك", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "طاقة إيجابية ليومك" },
+    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ورود لازم است", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "مانده:", ads_for: "برای:", pass: "رمز عبور", user: "نام", register: "ثبت نام", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "خطا در ورود", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "وارد شوید", wantReg: "ساخت حساب؟", notifMsg: "انرژی خوب برای روزتان" }
 };
 
 const subCategories = {
@@ -69,8 +64,7 @@ const subCategories = {
 };
 
 // --- Core Helper Functions ---
-
-window.timeAgo = (ts) => {
+function timeAgo(ts) {
     const seconds = Math.floor((Date.now() - ts) / 1000);
     const t = uiTrans[currentLang];
     if (seconds < 60) return t.now;
@@ -79,38 +73,60 @@ window.timeAgo = (ts) => {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return hours + "h " + t.ago;
     return Math.floor(hours / 24) + "d " + t.ago;
+}
+
+function getHideBtn(type, value) {
+    if (!(currentUser && currentUser.email === OWNER_EMAIL)) return "";
+    const isHidden = hiddenItems[type].includes(value);
+    return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer pointer-events-auto" 
+               onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
+}
+
+// --- Window Scoped Functions (Global) ---
+window.toggleDarkMode = () => {
+    isDarkMode = !isDarkMode;
+    document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    const icon = document.getElementById('theme-icon');
+    if(icon) icon.className = isDarkMode ? 'fas fa-moon text-blue-400' : 'fas fa-sun text-yellow-400';
 };
 
-function formatFullDate(ts) {
-    const d = new Date(ts);
-    return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-}
+window.openLangMenu = () => document.getElementById('lang-overlay').style.display = 'flex';
+window.closeLangMenu = () => document.getElementById('lang-overlay').style.display = 'none';
 
-// --- Initialization ---
+window.changeLanguage = (lang) => {
+    currentLang = lang;
+    localStorage.setItem('appLang', lang);
+    window.closeLangMenu();
+    updateUIScript();
+    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+};
 
-async function init() {
-    document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    await syncAllData(); 
-    
-    const lastMain = localStorage.getItem('lastMainTab') || 'news';
-    const activeBtn = document.getElementById('nav-btn-' + lastMain);
-    if(activeBtn) changeTab(lastMain, activeBtn);
-    
-    checkNewNotifs();
-    
-    // Admin Toggle
-    const brandName = document.querySelector('.glass-logo');
-    if(brandName) {
-        brandName.onclick = () => {
-            const bar = document.getElementById('admin-quick-bar');
-            if(currentUser && currentUser.email === OWNER_EMAIL) {
-                bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
-            }
-        };
+window.toggleAdminBar = () => {
+    if (currentUser && currentUser.email === OWNER_EMAIL) {
+        const bar = document.getElementById('admin-quick-bar');
+        bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
     }
-}
+};
 
-// --- UI Updates ---
+window.toggleHideItem = (type, value, event) => {
+    if (event) event.stopPropagation();
+    if (hiddenItems[type].includes(value)) {
+        hiddenItems[type] = hiddenItems[type].filter(i => i !== value);
+    } else {
+        hiddenItems[type].push(value);
+    }
+    localStorage.setItem('hiddenItems', JSON.stringify(hiddenItems));
+    updateUIScript();
+    updateTabContent(localStorage.getItem('lastMainTab'));
+};
+
+window.changeTab = (tab, el) => { 
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
+    if(el) el.classList.add('active'); 
+    localStorage.setItem('lastMainTab', tab);
+    updateTabContent(tab); 
+};
 
 window.updateUIScript = () => { 
     const t = uiTrans[currentLang]; 
@@ -119,10 +135,30 @@ window.updateUIScript = () => {
 
     const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
     
-    // Update Nav visibility based on content and boss settings
+    // Update Lang List
+    const langOverlay = document.querySelector('#lang-overlay .lang-grid');
+    if (langOverlay) {
+        const langs = ['ku', 'en', 'ar', 'fa'];
+        langOverlay.innerHTML = langs.map(l => {
+            const hasPosts = allPosts.some(p => p.lang === l);
+            const isHiddenByBoss = hiddenItems.langs.includes(l);
+            const langName = l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'));
+            if (isBoss) {
+                return `<div class="flex items-center justify-between w-full bg-white/5 rounded-xl p-1 mb-2">
+                    <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1 text-xs">${langName}</button>
+                    ${getHideBtn('langs', l)}
+                </div>`;
+            } else if (hasPosts && !isHiddenByBoss) {
+                return `<button onclick="changeLanguage('${l}')" class="lang-btn-glass">${langName}</button>`;
+            }
+            return '';
+        }).join('');
+    }
+
+    // Update Nav Icons
     ['news','info','market','discount','account'].forEach(k => { 
-        const navEl = document.getElementById('nav-'+k);
-        if(navEl) navEl.innerText = t[k]; 
+        const navText = document.getElementById('nav-'+k);
+        if(navText) navText.innerText = t[k]; 
         
         const btn = document.getElementById('nav-btn-' + k);
         if (btn) {
@@ -158,18 +194,15 @@ window.updateTabContent = (tab) => {
 
         if (availableSubs.length > 0) {
             subNav.style.display = 'block';
-            if (!activeSubCategory || !availableSubs.includes(activeSubCategory)) {
-                activeSubCategory = availableSubs[0];
-            }
+            if (!activeSubCategory || !availableSubs.includes(activeSubCategory)) activeSubCategory = availableSubs[0];
             subBar.innerHTML = availableSubs.map(item => `
                 <button class="sub-tab-btn ${activeSubCategory === item ? 'active' : ''}" 
                 onclick="filterBySub('${tab}', '${item}')">
-                    ${item}
+                    ${item} ${getHideBtn('factions', item)}
                 </button>
             `).join('');
         } else {
             subNav.style.display = 'none';
-            activeSubCategory = null;
         }
     } else { 
         subNav.style.display = 'none'; 
@@ -186,21 +219,17 @@ window.updateTabContent = (tab) => {
     }
 };
 
-// --- Post & Comment Rendering ---
+window.filterBySub = (tab, subName) => { 
+    activeSubCategory = subName; 
+    updateTabContent(tab); 
+};
 
 window.renderPostHTML = (p) => {
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
-    const isLiked = currentUser && likeCounts[p.id] > 0; // Simple check for visual
+    const isLiked = currentUser && likeCounts[p.id] > 0; // Simplified for demo
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media" loading="lazy">` : '';
     
-    let expiryHTML = '';
-    if (p.expiry_date && p.expiry_date !== 'never') {
-        const diff = p.expiry_date - Date.now();
-        const days = Math.floor(diff / 86400000);
-        expiryHTML = `<span class="expiry-tag"><i class="far fa-clock"></i> ${t.time_left} ${days}d</span>`;
-    }
-
     return `
     <div class="post-card animate-fade">
         ${mediaHTML}
@@ -208,179 +237,204 @@ window.renderPostHTML = (p) => {
             <div class="flex justify-between items-start mb-2">
                 <span class="text-[10px] opacity-40">${timeAgo(p.id)}</span>
                 <div class="flex gap-3">
-                    ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
+                    ${p.post_link ? `<a href="${p.post_link}" target="_blank" class="text-blue-400"><i class="fas fa-link"></i></a>` : ''}
+                    ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
             </div>
-            ${p.title ? `<div class="glass-title"><h3 class="font-bold text-md">${p.title}</h3></div>` : ''}
+            ${p.title ? `<div class="glass-title"><h3 class="font-bold">${p.title}</h3></div>` : ''}
             ${p.desc ? `<p class="text-sm opacity-70 mb-4">${p.desc}</p>` : ''}
             <div class="flex justify-between items-center border-t border-white/5 pt-3">
-                <div class="flex gap-6">
-                    <button onclick="toggleFavorite(${p.id})" class="flex items-center gap-2">
-                        <i class="fas fa-heart ${isLiked ? 'text-red-500' : 'opacity-20'}"></i>
+                <div class="flex gap-4">
+                    <button onclick="toggleFavorite(${p.id})" class="flex items-center gap-1">
+                        <i class="fa-heart ${isLiked ? 'fas text-red-500' : 'far opacity-50'}"></i>
                         <span class="text-xs">${likeCounts[p.id] || 0}</span>
                     </button>
-                    <button onclick="openComments(${p.id})" class="flex items-center gap-2 opacity-60">
-                        <i class="far fa-comment-dots"></i><span class="text-xs">${(comments[p.id] || []).length}</span>
+                    <button onclick="openComments(${p.id})" class="flex items-center gap-1 opacity-60">
+                        <i class="far fa-comment"></i><span class="text-xs">${(comments[p.id] || []).length}</span>
                     </button>
                 </div>
-                ${expiryHTML}
+                ${isAdmin ? `<span class="admin-name-tag">By: ${p.admin_name || 'Admin'}</span>` : ''}
             </div>
         </div>
     </div>`;
 };
 
-// --- Auth logic ---
+window.renderAuthUI = (mode = 'login') => {
+    const display = document.getElementById('content-display');
+    const t = uiTrans[currentLang];
+    if (currentUser) {
+        display.innerHTML = `<div class="glass-card p-8 text-center animate-fade">
+            <div class="w-16 h-16 bg-white/10 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">${currentUser.email[0].toUpperCase()}</div>
+            <h2 class="text-xl font-bold mb-2">${currentUser.name || 'User'}</h2>
+            <p class="text-xs opacity-40 mb-6">${currentUser.email}</p>
+            <button class="auth-submit !bg-red-500/20 !text-red-400" onclick="logout()">${t.logout}</button>
+        </div>`;
+        return;
+    }
+    if (mode === 'login') {
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2>
+            <input id="auth-email" type="email" class="auth-input" placeholder="${t.email}">
+            <input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}">
+            <button class="auth-submit" onclick="handleLogin()">${t.login}</button>
+            <p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
+    } else {
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2>
+            <input id="reg-user" type="text" class="auth-input" placeholder="${t.user}">
+            <input id="reg-email" type="email" class="auth-input" placeholder="${t.email}">
+            <input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}">
+            <button class="auth-submit" onclick="handleRegister()">${t.register}</button>
+            <p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
+    }
+};
 
 window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim().toLowerCase();
     const p = document.getElementById('auth-pass').value.trim();
-    
     if (e === OWNER_EMAIL && p === OWNER_PASS) {
         currentUser = { email: e, name: 'Boss Belal', role: 'admin' };
-        localStorage.setItem('user', JSON.stringify(currentUser));
-        location.reload(); 
-        return;
+    } else {
+        const { data } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
+        if (data) currentUser = data; else { alert(uiTrans[currentLang].authFail); return; }
     }
-
-    const { data: user } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
-    if (user) { 
-        currentUser = user; 
-        localStorage.setItem('user', JSON.stringify(currentUser)); 
-        location.reload(); 
-    } else { 
-        alert(uiTrans[currentLang].authFail); 
-    }
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    window.location.reload();
 };
 
-window.logout = () => {
-    localStorage.removeItem('user');
-    location.reload();
+window.handleRegister = async () => {
+    const u = document.getElementById('reg-user').value.trim();
+    const e = document.getElementById('reg-email').value.trim().toLowerCase();
+    const p = document.getElementById('reg-pass').value.trim();
+    if (!u || !e || !p) return;
+    const { error } = await _supabase.from('users').insert([{ email: e, password: p, name: u, role: 'user', last_active: Date.now() }]);
+    if (!error) { alert(uiTrans[currentLang].regSuccess); renderAuthUI('login'); }
 };
 
-// --- Modals Control ---
+window.logout = () => { localStorage.removeItem('user'); window.location.reload(); };
 
-window.openPostModal = () => document.getElementById('post-modal').style.display = 'flex';
+// --- Modals ---
+window.openPostModal = () => {
+    document.getElementById('post-modal').style.display = 'flex';
+    window.updateSubSelect('news');
+};
 window.closePostModal = () => document.getElementById('post-modal').style.display = 'none';
+
 window.openNotifModal = () => document.getElementById('notif-modal').style.display = 'flex';
 window.closeNotifModal = () => document.getElementById('notif-modal').style.display = 'none';
-window.closeLangMenu = () => document.getElementById('lang-overlay').style.display = 'none';
-window.closeHeartMenu = () => document.getElementById('heart-overlay').style.display = 'none';
-window.closeCommentModal = () => document.getElementById('comment-modal').style.display = 'none';
 
-window.openLangMenu = () => document.getElementById('lang-overlay').style.display = 'flex';
-
-window.changeLanguage = (lang) => {
-    currentLang = lang;
-    localStorage.setItem('appLang', lang);
-    window.closeLangMenu();
-    updateUIScript();
-    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+window.openAdminStats = () => {
+    document.getElementById('admin-stats-modal').style.display = 'flex';
+    renderUsers(registeredUsers);
 };
+window.closeAdminStats = () => document.getElementById('admin-stats-modal').style.display = 'none';
 
-window.changeTab = (tab, el) => { 
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); 
-    if(el) el.classList.add('active'); 
-    localStorage.setItem('lastMainTab', tab);
-    updateTabContent(tab); 
+window.updateSubSelect = (cat) => {
+    const subSel = document.getElementById('post-sub-category');
+    if (['info', 'market', 'discount'].includes(cat)) {
+        subSel.style.display = 'block';
+        subSel.innerHTML = subCategories[cat][currentLang].map(s => `<option value="${s}">${s}</option>`).join('');
+    } else {
+        subSel.style.display = 'none';
+        subSel.value = "";
+    }
 };
-
-// --- Database Interactions ---
 
 window.submitPost = async () => {
     const title = document.getElementById('post-title').value; 
     const desc = document.getElementById('post-desc').value;
     const cat = document.getElementById('post-category').value; 
+    const sub = document.getElementById('post-sub-category').value;
     const lang = document.getElementById('post-lang').value;
     
-    const { error } = await _supabase.from('posts').insert([{
-        title, desc, category: cat, lang, 
-        user_email: currentUser?.email,
-        admin_name: currentUser?.name || "Admin"
+    const { error } = await _supabase.from('posts').insert([{ 
+        title, desc, category: cat, sub_category: sub, lang, 
+        admin_name: currentUser.name, user_email: currentUser.email, media: tempMedia.url 
     }]);
-
-    if(!error) {
-        closePostModal();
-        await syncAllData();
-    }
+    if(!error) { window.closePostModal(); syncAllData(); }
 };
 
-window.toggleFavorite = async (id) => {
-    if (!currentUser) return alert(uiTrans[currentLang].authErr);
-    const { data: existing } = await _supabase.from('likes').select('*').eq('post_id', id).eq('user_email', currentUser.email).single();
-    if (existing) {
-        await _supabase.from('likes').delete().eq('id', existing.id);
-    } else {
-        await _supabase.from('likes').insert([{ post_id: id, user_email: currentUser.email }]);
-    }
-    await syncAllData();
+window.submitNotif = async () => {
+    const title = document.getElementById('notif-title').value; 
+    const desc = document.getElementById('notif-desc').value;
+    const lang = document.getElementById('notif-lang').value;
+    const { error } = await _supabase.from('posts').insert([{
+        title, desc, lang, category: 'notif', admin_name: currentUser.name, user_email: currentUser.email
+    }]);
+    if(!error) { window.closeNotifModal(); syncAllData(); }
 };
 
-window.openComments = (id) => {
-    activeCommentPostId = id;
-    document.getElementById('comment-modal').style.display = 'flex';
-    renderComments();
-    updateCommentInputArea();
+window.openComments = (id) => { 
+    activeCommentPostId = id; 
+    document.getElementById('comment-modal').style.display = 'flex'; 
+    renderComments(); 
+    const area = document.getElementById('comment-input-area');
+    if(!currentUser) area.innerHTML = `<p class="text-center text-xs text-yellow-500">${uiTrans[currentLang].noComment}</p>`;
+    else area.innerHTML = `<div class="flex gap-2 p-2"><input id="comment-input" type="text" class="auth-input flex-1" placeholder="..."><button onclick="submitComment()" class="p-2 bg-green-500 rounded-lg"><i class="fas fa-paper-plane"></i></button></div>`;
 };
+window.closeCommentModal = () => document.getElementById('comment-modal').style.display = 'none';
 
 window.renderComments = () => {
     const list = document.getElementById('comment-list');
-    const coms = comments[activeCommentPostId] || [];
-    list.innerHTML = coms.map(c => `
-        <div class="bg-white/5 p-3 rounded-xl">
-            <b class="text-[10px] text-blue-400">@${c.user_name}</b>
-            <p class="text-sm">${c.text}</p>
-        </div>
-    `).join('') || '<p class="text-center opacity-20 mt-4">No comments</p>';
+    const allComs = comments[activeCommentPostId] || [];
+    list.innerHTML = allComs.map(c => `<div class="bg-white/5 p-2 rounded-lg mb-2"><span class="text-[10px] opacity-40">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`).join('') || 'Empty';
 };
 
 window.submitComment = async () => {
-    const input = document.getElementById('comment-input');
-    if (!input.value.trim() || !currentUser) return;
-    
-    await _supabase.from('comments').insert([{
-        post_id: activeCommentPostId,
-        user_email: currentUser.email,
-        user_name: currentUser.name || "User",
-        text: input.value
-    }]);
-    
-    input.value = '';
-    await syncAllData();
-    renderComments();
+    const val = document.getElementById('comment-input').value;
+    if(!val) return;
+    await _supabase.from('comments').insert([{ post_id: activeCommentPostId, text: val, user_name: currentUser.name, user_email: currentUser.email }]);
+    document.getElementById('comment-input').value = "";
+    syncAllData(); setTimeout(renderComments, 500);
 };
 
-window.updateCommentInputArea = () => {
-    const area = document.getElementById('comment-input-area');
-    if (!currentUser) {
-        area.innerHTML = `<p class="p-4 text-center text-xs text-yellow-500">${uiTrans[currentLang].noComment}</p>`;
-        return;
-    }
-    area.innerHTML = `
-        <div class="flex gap-2 p-2">
-            <input id="comment-input" type="text" class="auth-input flex-1 !mb-0" placeholder="Write...">
-            <button onclick="submitComment()" class="p-3 bg-green-500 rounded-xl"><i class="fas fa-paper-plane text-black"></i></button>
-        </div>`;
+window.deletePost = async (id) => { if(confirm('Delete?')) { await _supabase.from('posts').delete().eq('id', id); syncAllData(); } };
+
+window.showAllNotifs = () => {
+    document.getElementById('heart-overlay').style.display = 'block';
+    document.getElementById('fav-title-main').innerText = uiTrans[currentLang].notifSec;
+    document.getElementById('fav-nav-tabs').style.display = 'none';
+    const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
+    document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : 'Empty';
 };
 
-// --- Search & Stats ---
+window.openHeartMenu = () => {
+    if(!currentUser) { alert(uiTrans[currentLang].authErr); return; }
+    document.getElementById('heart-overlay').style.display = 'block';
+    document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav;
+    document.getElementById('fav-nav-tabs').style.display = 'flex';
+    window.showFavorites('post');
+};
+window.closeHeartMenu = () => document.getElementById('heart-overlay').style.display = 'none';
 
-window.searchUsers = (val) => {
-    const filtered = registeredUsers.filter(u => u.email.includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase())));
-    renderUsers(filtered);
+window.showFavorites = (type) => {
+    const items = allPosts.filter(p => (type === 'post' ? p.category !== 'notif' : p.category === 'notif') && likeCounts[p.id] > 0);
+    document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : 'Empty';
 };
 
-function checkNewNotifs() {
-    const lastSeen = localStorage.getItem('lastNotifSeen') || 0;
-    const latestNotif = allPosts.find(p => p.category === 'notif' && p.id > lastSeen);
-    if (latestNotif) {
-        const toast = document.getElementById('toast-area');
-        document.getElementById('toast-title').innerText = latestNotif.title;
-        document.getElementById('toast-desc').innerText = latestNotif.desc;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 5000);
-        localStorage.setItem('lastNotifSeen', latestNotif.id);
-    }
+function renderUsers(users) {
+    document.getElementById('admin-user-list').innerHTML = users.map(u => `
+        <div class="glass-card p-3 flex justify-between items-center mb-2">
+            <div><p class="font-bold text-sm">${u.name}</p><p class="text-[10px] opacity-40">${u.email}</p></div>
+            <span class="text-[10px] p-1 rounded ${u.role==='admin'?'bg-red-500':'bg-blue-500'}">${u.role}</span>
+        </div>
+    `).join('');
+    document.getElementById('stat-total-users').innerText = users.length;
 }
 
-// Start app
+// Cloudinary Simulation (You can replace with your real widget code)
+window.openCloudinaryWidget = () => {
+    const url = prompt("Enter image URL (Cloudinary integration here):");
+    if(url) {
+        tempMedia.url = url;
+        document.getElementById('upload-status').innerText = "Image Selected!";
+    }
+};
+
+// --- Init ---
+async function init() {
+    document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    await syncAllData();
+    updateUIScript();
+    const lastTab = localStorage.getItem('lastMainTab') || 'news';
+    changeTab(lastTab, document.getElementById('nav-btn-' + lastTab));
+}
 init();
