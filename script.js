@@ -45,6 +45,12 @@ async function syncAllData() {
         const { data: usersData } = await _supabase.from('users').select('*');
         registeredUsers = usersData || [];
         
+        // نوێکردنەوەی ژمارەی بەکارهێنەران بۆ ئادمین
+        if (currentUser && currentUser.email === OWNER_EMAIL) {
+            updateCounters();
+            renderUsers(registeredUsers);
+        }
+
         updateUIScript();
         updateTabContent(localStorage.getItem('lastMainTab') || 'news');
     } catch (e) { console.error("Sync Error:", e); }
@@ -80,6 +86,15 @@ function getHideBtn(type, value) {
     const isHidden = hiddenItems[type].includes(value);
     return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer pointer-events-auto" 
                onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
+}
+
+function updateCounters() { 
+    const now = Date.now(); 
+    const totalUsers = registeredUsers.length;
+    const onlineUsers = registeredUsers.filter(u => (now - (u.last_active || 0)) < 300000).length; // 5 mins threshold
+
+    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = onlineUsers; 
 }
 
 // --- Window Scoped Functions (Global) ---
@@ -135,7 +150,6 @@ window.updateUIScript = () => {
 
     const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
     
-    // Update Lang List
     const langOverlay = document.querySelector('#lang-overlay .lang-grid');
     if (langOverlay) {
         const langs = ['ku', 'en', 'ar', 'fa'];
@@ -155,7 +169,6 @@ window.updateUIScript = () => {
         }).join('');
     }
 
-    // Update Nav Icons
     ['news','info','market','discount','account'].forEach(k => { 
         const navText = document.getElementById('nav-'+k);
         if(navText) navText.innerText = t[k]; 
@@ -227,7 +240,7 @@ window.filterBySub = (tab, subName) => {
 window.renderPostHTML = (p) => {
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
     const t = uiTrans[currentLang];
-    const isLiked = currentUser && likeCounts[p.id] > 0; // Simplified for demo
+    const isLiked = currentUser && likeCounts[p.id] > 0; 
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media" loading="lazy">` : '';
     
     return `
@@ -290,11 +303,16 @@ window.renderAuthUI = (mode = 'login') => {
 window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim().toLowerCase();
     const p = document.getElementById('auth-pass').value.trim();
+    
+    // Update active status during login
     if (e === OWNER_EMAIL && p === OWNER_PASS) {
-        currentUser = { email: e, name: 'Boss Belal', role: 'admin' };
+        currentUser = { email: e, name: 'Boss Belal', role: 'admin', last_active: Date.now() };
     } else {
         const { data } = await _supabase.from('users').select('*').eq('email', e).eq('password', p).single();
-        if (data) currentUser = data; else { alert(uiTrans[currentLang].authFail); return; }
+        if (data) {
+            currentUser = data;
+            await _supabase.from('users').update({ last_active: Date.now() }).eq('email', e);
+        } else { alert(uiTrans[currentLang].authFail); return; }
     }
     localStorage.setItem('user', JSON.stringify(currentUser));
     window.location.reload();
@@ -324,6 +342,7 @@ window.closeNotifModal = () => document.getElementById('notif-modal').style.disp
 window.openAdminStats = () => {
     document.getElementById('admin-stats-modal').style.display = 'flex';
     renderUsers(registeredUsers);
+    updateCounters();
 };
 window.closeAdminStats = () => document.getElementById('admin-stats-modal').style.display = 'none';
 
@@ -411,18 +430,24 @@ window.showFavorites = (type) => {
 };
 
 function renderUsers(users) {
-    document.getElementById('admin-user-list').innerHTML = users.map(u => `
+    const list = document.getElementById('admin-user-list');
+    if (!list) return;
+    
+    list.innerHTML = users.map(u => {
+        const isOnline = (Date.now() - (u.last_active || 0)) < 300000;
+        return `
         <div class="glass-card p-3 flex justify-between items-center mb-2">
-            <div><p class="font-bold text-sm">${u.name}</p><p class="text-[10px] opacity-40">${u.email}</p></div>
-            <span class="text-[10px] p-1 rounded ${u.role==='admin'?'bg-red-500':'bg-blue-500'}">${u.role}</span>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}"></div>
+                <div><p class="font-bold text-sm">${u.name}</p><p class="text-[10px] opacity-40">${u.email}</p></div>
+            </div>
+            <span class="text-[10px] p-1 rounded ${u.role==='admin'?'bg-red-500':'bg-blue-500'}">${u.role.toUpperCase()}</span>
         </div>
-    `).join('');
-    document.getElementById('stat-total-users').innerText = users.length;
+    `;}).join('');
 }
 
-// Cloudinary Simulation (You can replace with your real widget code)
 window.openCloudinaryWidget = () => {
-    const url = prompt("Enter image URL (Cloudinary integration here):");
+    const url = prompt("Enter image URL:");
     if(url) {
         tempMedia.url = url;
         document.getElementById('upload-status').innerText = "Image Selected!";
@@ -432,9 +457,20 @@ window.openCloudinaryWidget = () => {
 // --- Init ---
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
+    
+    // Update active status for logged in users
+    if (currentUser) {
+        await _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
+    }
+    
     await syncAllData();
     updateUIScript();
     const lastTab = localStorage.getItem('lastMainTab') || 'news';
     changeTab(lastTab, document.getElementById('nav-btn-' + lastTab));
+    
+    // Heartbeat to keep status updated
+    setInterval(() => {
+        if (currentUser) _supabase.from('users').update({ last_active: Date.now() }).eq('email', currentUser.email);
+    }, 60000); // every minute
 }
 init();
