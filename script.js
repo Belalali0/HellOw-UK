@@ -7,10 +7,10 @@ const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
 let currentLang = localStorage.getItem('appLang') || 'ku';
 let isDarkMode = localStorage.getItem('theme') !== 'light';
-let allPosts = []; // ئێستا لە داتابەیسەوە دێت
+let allPosts = []; 
 let userFavorites = JSON.parse(localStorage.getItem('userFavorites')) || {}; 
-let comments = {}; // ئێستا لە داتابەیسەوە دێت
-let likeCounts = {}; // ئێستا لە داتابەیسەوە دێت
+let comments = {}; 
+let likeCounts = {}; 
 let hiddenItems = JSON.parse(localStorage.getItem('hiddenItems')) || { langs: [], navs: [], factions: [] };
 let notifOnScreen = localStorage.getItem('notifOnScreen') !== 'false';
 let tempMedia = { url: "", type: "" };
@@ -19,18 +19,16 @@ let replyingToId = null;
 let currentFavTab = 'post';
 let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
-let registeredUsers = []; // ئێستا لە داتابەیسەوە دێت
+let registeredUsers = []; 
 let guestActivity = [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 
 // --- Functions to Sync with Database ---
 
 async function syncAllData() {
-    // هێنانی پۆستەکان
     const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
     allPosts = postsData || [];
 
-    // هێنانی کۆمێنتەکان
     const { data: comsData } = await _supabase.from('comments').select('*');
     comments = {};
     if (comsData) {
@@ -40,7 +38,6 @@ async function syncAllData() {
         });
     }
 
-    // هێنانی لایکەکان
     const { data: likesData } = await _supabase.from('likes').select('*');
     likeCounts = {};
     if (likesData) {
@@ -49,7 +46,6 @@ async function syncAllData() {
         });
     }
 
-    // هێنانی بەکارهێنەران
     const { data: usersData } = await _supabase.from('users').select('*');
     registeredUsers = usersData || [];
     
@@ -57,17 +53,11 @@ async function syncAllData() {
     updateTabContent(localStorage.getItem('lastMainTab') || 'news');
 }
 
-// --- Original Logic Restored ---
-
-function ensureOwnerAccount() {
-    // لە داتابەیس ئەدمین هەیە، پێویست بە ناوخۆیی ناکات
-}
-
 const uiTrans = {
-    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
-    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
-    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
-    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
+    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ببورە ناتوانی پێویستە ئەکاونت دروست بکەیت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
+    en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "Empty", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "Sorry, you cannot. You need to create an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
+    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "فارغ", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "عذراً، لا يمكنك. يجب عليك إنشاء حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
+    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "خالی است", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "ببخشید، نمی‌توانید. باید حساب کاربری بسازید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
 };
 
 const subCategories = {
@@ -78,7 +68,7 @@ const subCategories = {
 
 async function init() {
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
-    await syncAllData(); // هێنانی هەموو داتا لە داتابەیس
+    await syncAllData(); 
     updateHeartUI();
     updateBossIcon();
     const lastMain = localStorage.getItem('lastMainTab') || 'news';
@@ -340,12 +330,12 @@ window.showFavorites = (type) => {
     const btn = document.getElementById(type === 'post' ? 'btn-fav-post' : 'btn-fav-notif');
     if(btn) btn.classList.add('active');
     
-    const email = currentUser?.email;
-    const likedIds = allPosts.filter(p => {
-        // فلتەرکردنی ئەو پۆستانەی بەکارهێنەر لایکی کردوون لەڕێی داتابەیسەوە
-        return true; // لێرەدا دەتوانیت لۆژیکی دڵخوازەکان دابنێیتەوە
-    });
+    if (!currentUser) {
+        showGuestAuthAlert();
+        return;
+    }
     
+    const likedIds = allPosts.filter(p => true); // لۆژیکی دڵخوازەکان
     document.getElementById('fav-items-display').innerHTML = likedIds.length ? likedIds.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
 };
 
@@ -449,22 +439,39 @@ window.showAllNotifs = () => {
     document.getElementById('notif-toggle-btn').style.display = 'flex';
     
     if (!currentUser) {
-        document.getElementById('fav-items-display').innerHTML = `
-            <div class="p-8 text-center animate-fade">
-                <i class="fas fa-bullhorn text-4xl mb-4 opacity-20"></i>
-                <p class="text-sm leading-relaxed opacity-80 mb-4">${t.notifMsg}</p>
-                <div class="flex gap-3 px-4">
-                    <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
-                    <button onclick="closeHeartMenu()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
-                </div>
-            </div>`;
+        showGuestAuthAlert();
     } else {
         const items = allPosts.filter(p => p.category === 'notif' && p.lang === currentLang);
         document.getElementById('fav-items-display').innerHTML = items.length ? items.map(p => renderPostHTML(p)).join('') : '<p class="text-center opacity-20 mt-10">Empty</p>';
     }
 };
 
-window.openHeartMenu = () => { document.getElementById('heart-overlay').style.display='block'; document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; document.getElementById('fav-nav-tabs').style.display = 'flex'; document.getElementById('notif-toggle-btn').style.display = 'none'; showFavorites('post'); };
+window.openHeartMenu = () => { 
+    if(!currentUser) {
+        showGuestAuthAlert();
+    } else {
+        document.getElementById('heart-overlay').style.display='block'; 
+        document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; 
+        document.getElementById('fav-nav-tabs').style.display = 'flex'; 
+        document.getElementById('notif-toggle-btn').style.display = 'none'; 
+        showFavorites('post'); 
+    }
+};
+
+function showGuestAuthAlert() {
+    const t = uiTrans[currentLang];
+    document.getElementById('heart-overlay').style.display='block';
+    document.getElementById('fav-items-display').innerHTML = `
+        <div class="p-8 text-center animate-fade">
+            <i class="fas fa-lock text-4xl mb-4 opacity-20"></i>
+            <p class="text-sm font-bold text-yellow-500 mb-2">${t.noComment}</p>
+            <p class="text-[11px] leading-relaxed opacity-60 mb-6">${t.wantReg}</p>
+            <div class="flex gap-3 px-4">
+                <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold text-xs">${t.yes}</button>
+                <button onclick="closeHeartMenu()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold text-xs">${t.no}</button>
+            </div>
+        </div>`;
+}
 
 function checkNewNotifs() { 
     if(!currentUser) return; 
@@ -478,13 +485,28 @@ function checkNewNotifs() {
 
 function fireToast(t, d) { const audio = document.getElementById('notif-sound'); if(audio) audio.play().catch(e=>{}); const toast = document.getElementById('toast-area'); document.getElementById('toast-title').innerText = t; document.getElementById('toast-desc').innerText = d; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 6000); }
 
-window.openComments = (id) => { activeCommentPostId = id; replyingToId = null; document.getElementById('comment-modal').style.display = 'flex'; renderComments(); updateCommentInputArea(); };
+window.openComments = (id) => { 
+    activeCommentPostId = id; 
+    replyingToId = null; 
+    document.getElementById('comment-modal').style.display = 'flex'; 
+    renderComments(); 
+    updateCommentInputArea(); 
+};
 
 window.updateCommentInputArea = () => {
     const area = document.getElementById('comment-input-area');
     const t = uiTrans[currentLang];
     if(!currentUser) { 
-        area.innerHTML = `<div class="p-4 text-center text-xs text-yellow-500 font-bold bg-yellow-500/5 rounded-xl border border-yellow-500/20 m-2">${t.noComment}</div>`; 
+        area.innerHTML = `
+            <div class="p-4 flex flex-col items-center gap-3">
+                <div class="text-xs text-yellow-500 font-bold bg-yellow-500/5 rounded-xl border border-yellow-500/20 p-3 w-full text-center">
+                    ${t.noComment}
+                </div>
+                <div class="flex gap-2 w-full">
+                    <button onclick="goToAccountTab(); closeCommentModal();" class="flex-1 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-[10px] font-bold">${t.yes}</button>
+                    <button onclick="closeCommentModal()" class="flex-1 py-2 bg-white/5 rounded-lg text-[10px] font-bold">${t.no}</button>
+                </div>
+            </div>`; 
         return; 
     }
     area.innerHTML = `
@@ -502,7 +524,6 @@ window.renderComments = () => {
 };
 
 function renderSingleComment(c) {
-    const t = uiTrans[currentLang];
     return `<div class="bg-white/5 p-3 rounded-2xl mb-2"><span class="opacity-40 text-[10px]">@${c.user_name}</span><p class="text-sm">${c.text}</p></div>`;
 }
 
@@ -526,40 +547,3 @@ window.deletePost = async (id) => {
         await syncAllData();
     } 
 };
-
-window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
-window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
-window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
-window.updateHeartUI = () => { const h = document.getElementById('main-heart'); if(h) h.className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
-window.closeLangMenu = () => { document.getElementById('lang-overlay').style.display = 'none'; };
-window.openLangMenu = () => { document.getElementById('lang-overlay').style.display = 'flex'; };
-window.openPostModal = () => { document.getElementById('post-modal').style.display = 'flex'; };
-window.closePostModal = () => { document.getElementById('post-modal').style.display = 'none'; };
-window.openNotifModal = () => { document.getElementById('notif-modal').style.display = 'flex'; };
-window.closeNotifModal = () => { document.getElementById('notif-modal').style.display = 'none'; };
-window.closeCommentModal = () => { document.getElementById('comment-modal').style.display='none'; };
-window.closeHeartMenu = () => { document.getElementById('heart-overlay').style.display='none'; };
-window.openCloudinaryWidget = () => { cloudinary.openUploadWidget({ cloudName: "dbttb8vmg", uploadPreset: "Hellowuk" }, (err, res) => { if (res.event === "success") { tempMedia.url = res.info.secure_url; document.getElementById('upload-status').innerText = "✅"; } }); };
-window.updateSubSelect = (cat) => { const s = document.getElementById('post-sub-category'); if (['info', 'market', 'discount'].includes(cat)) { s.style.display = 'block'; s.innerHTML = subCategories[cat][currentLang].map(i => `<option value="${i}">${i}</option>`).join(''); } else s.style.display = 'none'; };
-window.toggleNotifScreenStatus = () => { notifOnScreen = !notifOnScreen; localStorage.setItem('notifOnScreen', notifOnScreen); updateNotifToggleUI(); };
-function updateNotifToggleUI() { const i = document.getElementById('notif-toggle-icon'); if(i) i.className = (notifOnScreen ? 'fas fa-bell' : 'far fa-bell') + " text-2xl"; }
-
-window.checkAuthAndAction = (cb) => { 
-    if(!currentUser) { document.getElementById('auth-alert-modal').style.display = 'flex'; renderAuthUI('login'); } else { cb(); }
-};
-
-function timeAgo(d) {
-    const s = Math.floor((new Date() - new Date(d)) / 1000);
-    const t = uiTrans[currentLang];
-    if (s < 60) return t.now;
-    if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
-    if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
-    return Math.floor(s/86400) + "d " + t.ago;
-}
-
-function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
-function closeAuthAlert() { document.getElementById('auth-alert-modal').style.display = 'none'; }
-function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getElementById('nav-btn-account')); }
-function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase())); renderUsers(filtered); }
-
-document.addEventListener('DOMContentLoaded', init);
