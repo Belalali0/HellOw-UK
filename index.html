@@ -4,44 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Hellow UK App</title>
-    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
-        .admin-top-bar { position: fixed !important; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 500px; }
+        @import url('https://fonts.googleapis.com/css2?family=Righteous&family=Vazirmatn:wght@300;500;700&display=swap');
+        :root { --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.1); --bg-gradient: linear-gradient(135deg, #0f172a, #020617); --accent: #4ade80; --text-main: #ffffff; }
+        .light-mode { --glass-bg: rgba(0, 0, 0, 0.05); --glass-border: rgba(0, 0, 0, 0.1); --bg-gradient: linear-gradient(135deg, #f8fafc, #e2e8f0); --text-main: #1e293b; }
+        body { direction: rtl !important; background: var(--bg-gradient); min-height: 100vh; margin: 0; font-family: 'Vazirmatn', sans-serif; color: var(--text-main); transition: 0.5s; overflow-x: hidden; }
+        .header-main { display: flex; justify-content: space-between; align-items: center; padding: 15px; position: sticky; top: 0; z-index: 1000; border-radius: 0 0 25px 25px; background: var(--glass-bg); backdrop-filter: blur(15px); border-bottom: 1px solid var(--glass-border); }
+        .header-side { display: flex; gap: 10px; flex: 1; align-items: center; }
+        .side-left { justify-content: flex-end; }
+        .header-center { flex: 2; display: flex; justify-content: center; }
+        .glass-logo { font-family: 'Righteous', cursive; font-size: 1.2rem; background: var(--glass-bg); padding: 8px 20px; border-radius: 50px; border: 1px solid var(--glass-border); cursor: pointer; display: flex; align-items: center; direction: ltr !important; }
+        .logo-sun { color: #ffd700; margin: 0 5px; animation: rotateSun 10s linear infinite; font-size: 0.9rem; }
+        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .admin-top-bar { position: fixed !important; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 500px; display: flex; justify-content: space-around; padding: 12px; background: rgba(74, 222, 128, 0.15); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(74, 222, 128, 0.3); }
+        .admin-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--accent); cursor: pointer; font-weight: bold; }
         .toast-notif { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-150%); z-index: 10000; width: 92%; max-width: 380px; transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1); pointer-events: none; }
         .toast-notif.show { transform: translateX(-50%) translateY(0); pointer-events: auto; }
         .glass-title { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; }
-        
-        @keyframes nav-bounce { 0% { transform: scale(1); } 30% { transform: scale(1.4) translateY(-5px); } 50% { transform: scale(0.9); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .nav-item.active i { animation: nav-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); color: #4ade80; filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.5)); }
-        .nav-item i { transition: all 0.3s ease; }
-        
-        .stat-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 12px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .stat-card.active { border-color: #4ade80; background: rgba(74, 222, 128, 0.1); }
-        .role-badge { font-size: 8px; padding: 2px 6px; border-radius: 6px; font-weight: bold; text-transform: uppercase; margin-right: 5px; }
-        .role-admin { background: #ef4444; color: white; }
-        .role-owner { background: #facc15; color: black; box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); }
-
-        .sub-nav-container { display: none; margin-bottom: 15px; overflow-x: auto; padding: 5px; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; }
+        .nav-bottom { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 75px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-radius: 30px; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-main); opacity: 0.4; flex: 1; border: none; background: none; outline: none; transition: all 0.3s ease; cursor: pointer; }
+        .nav-item.active { color: #ffd700; opacity: 1; font-weight: bold; }
+        .post-card { background: var(--glass-bg); border-radius: 25px; border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .post-media { width: 100%; max-height: 300px; object-fit: cover; background: #000; border-bottom: 1px solid var(--glass-border); }
+        .post-body { padding: 15px; text-align: right; }
+        .lang-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .lang-modal { width: 85%; max-width: 450px; padding: 25px; border-radius: 35px; background: var(--bg-gradient); border: 1px solid var(--glass-border); text-align: center; }
+        .auth-input { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 14px; color: var(--text-main); text-align: center; width: 100%; margin-bottom: 12px; outline: none; border-radius: 15px; }
+        .auth-submit { background: var(--accent); color: #000; font-weight: 800; padding: 16px; border-radius: 20px; width: 100%; border: none; cursor: pointer; }
+        .sub-nav-container { display: none; margin-bottom: 15px; overflow-x: auto; padding: 5px; white-space: nowrap; }
         .sub-nav-bar { display: flex; gap: 8px; justify-content: center; width: 100%; }
-        .sub-tab-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 15px; border-radius: 15px; color: white; font-size: 11px; font-weight: bold; transition: 0.3s; flex: 1; text-align: center; }
+        .sub-tab-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 15px; border-radius: 15px; color: white; font-size: 11px; font-weight: bold; cursor: pointer; }
         .sub-tab-btn.active { background: rgba(74, 222, 128, 0.15); border-color: #4ade80; color: #4ade80; }
-        
         .expiry-tag { font-size: 9px; padding: 2px 8px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-        .duration-info { font-size: 9px; opacity: 0.7; font-weight: bold; }
-        .admin-name-tag { font-size: 9px; color: #4ade80; opacity: 0.8; font-weight: bold; }
+        .fav-full-page { position: fixed; inset: 0; background: var(--bg-gradient); z-index: 999; padding-top: 100px; overflow-y: auto; }
+        .animate-fade { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="fixed-layout">
 
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
 
-    <div id="toast-area" class="toast-notif" onclick="showAllNotifs()">
-        <div class="glass-card-strong p-4 flex items-center gap-3 border border-white/20 shadow-2xl rounded-3xl cursor-pointer">
-            <div class="bg-blue-600 w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-bell"></i></div>
+    <div id="toast-area" class="toast-notif">
+        <div class="bg-slate-800/90 backdrop-blur p-4 flex items-center gap-3 border border-white/20 shadow-2xl rounded-3xl">
+            <div class="bg-blue-600 w-11 h-11 rounded-2xl flex items-center justify-center text-white"><i class="fas fa-bell"></i></div>
             <div class="flex-1">
                 <h4 id="toast-title" class="font-bold text-sm text-white"></h4>
                 <p id="toast-desc" class="text-xs text-white/70 line-clamp-1"></p>
@@ -49,155 +59,223 @@
         </div>
     </div>
  
-    <header class="header-main glass-card">
+    <header class="header-main">
         <div class="header-side side-right">
-            <div class="top-btn" onclick="toggleTheme()"><i id="theme-icon" class="fas fa-sun text-yellow-400"></i></div>
-            <div class="top-btn lang-pill" onclick="openLangMenu()"><span id="active-lang-code">KU</span></div>
+            <div class="top-btn bg-white/5 p-2 rounded-xl" onclick="toggleTheme()"><i id="theme-icon" class="fas fa-sun text-yellow-400"></i></div>
+            <div class="top-btn lang-pill bg-white/5 p-2 px-4 rounded-xl cursor-pointer" onclick="openLangMenu()"><span id="active-lang-code" class="text-green-400 font-bold">KU</span></div>
         </div>
         <div class="header-center"><div class="glass-logo" onclick="toggleAdminBar()"><span style="color:#ff4d4d">He</span><span>ll</span><i class="fas fa-sun logo-sun"></i><span>w</span><span style="color:#4ade80">UK</span></div></div>
         <div class="header-side side-left">
-            <div class="top-btn" onclick="checkAuthAndAction(showAllNotifs)"><i id="main-bell-icon" class="fas fa-bell text-blue-400"></i></div>
-            <div class="top-btn" onclick="checkAuthAndAction(openHeartMenu)"><i id="main-heart" class="fas fa-heart-broken heart-black"></i></div>
+            <div class="top-btn bg-white/5 p-2 rounded-xl" onclick="checkAuthAndAction(showAllNotifs)"><i id="main-bell-icon" class="fas fa-bell text-blue-400"></i></div>
+            <div class="top-btn bg-white/5 p-2 rounded-xl" onclick="checkAuthAndAction(openHeartMenu)"><i id="main-heart" class="fas fa-heart-broken"></i></div>
         </div>
     </header>
 
-    <div id="admin-stats-modal" class="lang-overlay" style="display: none;" onclick="closeAdminStats()">
-        <div class="lang-modal glass-card-strong animate-fade w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6"><button onclick="closeAdminStats()" class="text-red-400 text-lg"><i class="fas fa-times-circle"></i></button><h3 class="text-xl font-bold text-green-400">Dashboard</h3></div>
-                <div class="grid grid-cols-3 gap-2 mb-6 text-[10px]">
-                    <div id="btn-stat-all" class="stat-card active" onclick="filterUserList('all')"><span class="opacity-50 block">Users</span><b id="stat-total-users" class="text-lg text-blue-400">0</b></div>
-                    <div id="btn-stat-online" class="stat-card" onclick="filterUserList('online')"><span class="opacity-50 block">Online</span><b id="stat-online-users" class="text-lg text-green-400">0</b></div>
-                    <div id="btn-stat-guest" class="stat-card" onclick="filterUserList('guest')"><span class="opacity-50 block">Guest</span><b id="stat-guest-users" class="text-lg text-yellow-400">0</b></div>
-                </div>
-                <input id="user-search-input" oninput="searchUsers(this.value)" type="text" class="auth-input" placeholder="Search...">
-            </div>
-            <div id="admin-user-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3"></div>
+    <div id="admin-stats-modal" class="lang-overlay" onclick="closeAdminStats()">
+        <div class="lang-modal animate-fade flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6"><button onclick="closeAdminStats()" class="text-red-400"><i class="fas fa-times-circle"></i></button><h3 class="text-xl font-bold text-green-400">Dashboard</h3></div>
+            <div id="admin-user-list" class="overflow-y-auto max-h-[60vh] space-y-3"></div>
         </div>
     </div>
 
-    <div id="auth-alert-modal" class="lang-overlay" style="display: none; z-index: 9999;">
-        <div class="lang-modal glass-card-strong animate-fade text-center p-6" style="max-width: 320px;">
-            <i class="fas fa-user-lock text-4xl text-yellow-500 mb-4"></i>
-            <p id="auth-alert-msg" class="text-sm font-bold mb-6"></p>
-            <div class="flex gap-3">
-                <button id="auth-yes-btn" onclick="goToAccountTab()" class="auth-submit !mb-0 !bg-green-600 flex-1"></button>
-                <button id="auth-no-btn" onclick="closeAuthAlert()" class="auth-submit !mb-0 !bg-white/10 flex-1"></button>
-            </div>
-        </div>
-    </div>
-
-    <div id="admin-quick-bar" class="admin-top-bar animate-fade" style="display: none;">
+    <div id="admin-quick-bar" class="admin-top-bar" style="display: none;">
         <div class="admin-btn" onclick="openPostModal()"><i class="fas fa-plus-circle"></i><span>Post</span></div>
         <div class="admin-btn" onclick="openNotifModal()"><i class="fas fa-bell"></i><span>Notif</span></div>
         <div class="admin-btn" onclick="openAdminStats()"><i class="fas fa-chart-line"></i><span>Stats</span></div>
     </div>
 
-    <div id="notif-modal" class="lang-overlay" style="display: none;" onclick="closeNotifModal()">
-        <div class="lang-modal glass-card-strong animate-fade relative" style="max-width: 450px; width: 95%;" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-bold mb-4 text-blue-400">New Notification</h3>
-            <div class="flex flex-col gap-3">
-                <input id="notif-title" type="text" class="auth-input" placeholder="Title">
-                <textarea id="notif-desc" class="auth-input h-24" placeholder="Message"></textarea>
-                <select id="notif-lang" class="auth-input !p-2 !text-xs">
-                    <option value="ku">Kurdî</option><option value="en">English</option><option value="ar">العربية</option><option value="fa">فارسی</option>
-                </select>
-                <button class="auth-submit !bg-blue-500" onclick="submitNotif()">Send</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="post-modal" class="lang-overlay" style="display: none;" onclick="closePostModal()">
-        <div class="lang-modal glass-card-strong animate-fade relative" style="max-width: 450px; width: 95%;" onclick="event.stopPropagation()">
+    <div id="post-modal" class="lang-overlay" onclick="closePostModal()">
+        <div class="lang-modal animate-fade" onclick="event.stopPropagation()">
             <h3 class="text-xl font-bold mb-4 text-green-400">New Post</h3>
             <div class="flex flex-col gap-3">
                 <input id="post-title" type="text" class="auth-input" placeholder="Title">
                 <textarea id="post-desc" class="auth-input h-24" placeholder="Description"></textarea>
-                <input id="post-external-link" type="text" class="auth-input" placeholder="External Link (Optional)">
-                
+                <input id="post-external-link" type="text" class="auth-input" placeholder="Link (Optional)">
                 <button onclick="openCloudinaryWidget()" class="auth-input !border-dashed !border-green-500 text-sm">Upload Media</button>
-                <p id="upload-status" class="text-[10px] text-center text-green-400"></p>
+                <p id="upload-status" class="text-[10px] text-green-400"></p>
                 <div class="flex gap-2">
-                    <select id="post-lang" class="auth-input flex-1 !p-2 !text-xs" onchange="updateSubSelect(document.getElementById('post-category').value)">
+                    <select id="post-lang" class="auth-input flex-1">
                         <option value="ku">Kurdî</option><option value="en">English</option><option value="ar">العربية</option><option value="fa">فارسی</option>
                     </select>
-                    <select id="post-category" class="auth-input flex-1 !p-2 !text-xs" onchange="updateSubSelect(this.value)">
+                    <select id="post-category" class="auth-input flex-1" onchange="updateSubSelect(this.value)">
                         <option value="news">News</option><option value="info">Info</option><option value="market">Market</option><option value="discount">Discount</option>
                     </select>
                 </div>
-                <select id="post-sub-category" class="auth-input !p-2 !text-xs" style="display:none;"></select>
-                <div id="duration-area">
-                    <label class="text-[10px] opacity-50 px-2">Duration:</label>
-                    <select id="post-duration" class="auth-input !p-2 !text-xs">
-                        <option value="never">Never</option><option value="1w">1 Week</option><option value="2w">2 Weeks</option><option value="3w">3 Weeks</option><option value="1m">1 Month</option><option value="2m">2 Months</option><option value="3m">3 Months</option>
-                    </select>
-                </div>
-                <button class="auth-submit !bg-green-500" onclick="submitPost()">Submit</button>
+                <select id="post-sub-category" class="auth-input" style="display:none;"></select>
+                <button class="auth-submit" onclick="submitPost()">Submit Post</button>
             </div>
         </div>
     </div>
 
-    <div id="comment-modal" class="lang-overlay" style="display: none; z-index: 2500;" onclick="closeCommentModal()">
-        <div class="lang-modal glass-card-strong animate-fade w-full max-w-md h-[80vh] flex flex-col" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4"><button onclick="closeCommentModal()" class="text-xs opacity-50 underline">Close</button><h3 class="text-lg font-bold">Comments</h3></div>
-            <div id="comment-list" class="flex-1 overflow-y-auto mb-4 space-y-4 p-2"></div>
-            <div id="comment-input-area"></div>
+    <div id="lang-overlay" class="lang-overlay" onclick="closeLangMenu()">
+        <div class="lang-modal" onclick="event.stopPropagation()">
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="changeLanguage('ku')" class="auth-submit !bg-white/5 !text-white">Kurdî</button>
+                <button onclick="changeLanguage('en')" class="auth-submit !bg-white/5 !text-white">English</button>
+                <button onclick="changeLanguage('ar')" class="auth-submit !bg-white/5 !text-white">العربية</button>
+                <button onclick="changeLanguage('fa')" class="auth-submit !bg-white/5 !text-white">فارسی</button>
+            </div>
         </div>
     </div>
-
-    <div id="heart-overlay" class="fav-full-page animate-fade" style="display: none;">
-        <div class="p-4 h-full flex flex-col relative">
-             <div id="notif-toggle-btn" class="absolute top-4 left-4 z-50 flex flex-col items-center cursor-pointer text-blue-400" onclick="toggleNotifScreenStatus()" style="display:none;"><i id="notif-toggle-icon" class="fas fa-bell text-2xl"></i><span id="notif-status-text" class="text-[9px] font-bold uppercase mt-1">ON</span></div>
-             <div class="fav-header-title" id="fav-title-main">Favorites</div>
-             <div id="fav-nav-tabs" class="fav-top-nav">
-                <button id="btn-fav-post" class="fav-nav-btn active" onclick="showFavorites('post')"><i class="fas fa-clone"></i> <span id="fav-txt-p">Posts</span></button>
-                <button id="btn-fav-notif" class="fav-nav-btn" onclick="showFavorites('notif')"><i class="fas fa-bell"></i> <span id="fav-txt-n">Notif</span></button>
-             </div>
-             <div id="fav-items-display" class="mt-4 flex-1 overflow-y-auto pb-20"></div>
-             <button onclick="closeHeartMenu()" class="close-fav-btn"><i class="fas fa-times"></i></button>
-        </div>
-    </div>
-
-    <div id="lang-overlay" class="lang-overlay" onclick="closeLangMenu()"><div class="lang-modal glass-card-strong animate-fade" onclick="event.stopPropagation()"><div class="lang-grid"><button onclick="changeLanguage('ku')" class="lang-btn-glass">Kurdî</button><button onclick="changeLanguage('en')" class="lang-btn-glass">English</button><button onclick="changeLanguage('ar')" class="lang-btn-glass">العربية</button><button onclick="changeLanguage('fa')" class="lang-btn-glass">فارسی</button></div></div></div>
 
     <main class="content-area p-4 pb-24">
         <div id="sub-nav-container" class="sub-nav-container"><div id="sub-nav-bar" class="sub-nav-bar"></div></div>
         <div id="content-display" class="space-y-4"></div>
     </main>
 
-    <nav class="nav-bottom glass-card">
-        <button id="nav-btn-news" onclick="changeTab('news', this)" class="nav-item active"><i class="fas fa-th-large"></i><span id="nav-news"></span></button>
-        <button id="nav-btn-info" onclick="changeTab('info', this)" class="nav-item"><i class="fas fa-lightbulb"></i><span id="nav-info"></span></button>
-        <button id="nav-btn-market" onclick="changeTab('market', this)" class="nav-item"><i class="fas fa-store"></i><span id="nav-market"></span></button>
-        <button id="nav-btn-discount" onclick="changeTab('discount', this)" class="nav-item"><i class="fas fa-tag"></i><span id="nav-discount"></span></button>
-        <button id="nav-btn-account" onclick="changeTab('account', this)" class="nav-item"><i class="fas fa-user-astronaut"></i><span id="nav-account"></span></button>
+    <nav class="nav-bottom">
+        <button id="nav-btn-news" onclick="changeTab('news', this)" class="nav-item active"><i class="fas fa-th-large"></i><span id="nav-news">هەواڵ</span></button>
+        <button id="nav-btn-info" onclick="changeTab('info', this)" class="nav-item"><i class="fas fa-lightbulb"></i><span id="nav-info">زانیاری</span></button>
+        <button id="nav-btn-market" onclick="changeTab('market', this)" class="nav-item"><i class="fas fa-store"></i><span id="nav-market">بازاڕ</span></button>
+        <button id="nav-btn-discount" onclick="changeTab('discount', this)" class="nav-item"><i class="fas fa-tag"></i><span id="nav-discount">داشکاندن</span></button>
+        <button id="nav-btn-account" onclick="changeTab('account', this)" class="nav-item"><i class="fas fa-user-astronaut"></i><span id="nav-account">ئەکاونت</span></button>
     </nav>
 
+    <div id="heart-overlay" class="fav-full-page animate-fade" style="display: none;">
+        <div class="p-4 h-full flex flex-col relative">
+             <button onclick="closeHeartMenu()" class="close-fav-btn bg-red-500 w-10 h-10 rounded-full mb-4">X</button>
+             <div id="fav-items-display" class="mt-4 flex-1 overflow-y-auto pb-20"></div>
+        </div>
+    </div>
+
+    <div id="auth-alert-modal" class="lang-overlay" style="z-index: 9999;"></div>
+
     <script>
-        // دڵنیابەرەوە ئەم زانیاریانە لە script.js جێگیرکراون
+        // --- Configuration & Initialization ---
         const supabaseUrl = 'https://yqjfdtrjngwaoeygeiqh.supabase.co';
         const supabaseKey = 'sb_publishable_kR58sr2ch1wun_WmJqmetw_ailryRxc';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // تێبینی بۆ چارەسەر: 
-        // ۱. دڵنیابەرەوە لەناو Supabase خشتەی 'posts' ڕێگەی داوە بە (Row Level Security - RLS) بۆ Select بە شێوەی Public.
-        // ۲. لە کاتی submitPost دڵنیابەرەوە کە `status` یان `visibility` ی پۆستەکە لەسەر گشتییە.
+        let currentUser = JSON.parse(localStorage.getItem('user')) || null;
+        let currentLang = localStorage.getItem('appLang') || 'ku';
+        let isDarkMode = localStorage.getItem('theme') !== 'light';
+        let allPosts = [];
+        let userFavorites = JSON.parse(localStorage.getItem('userFavorites')) || {};
+        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+        const OWNER_EMAIL = 'belalbelaluk@gmail.com';
+        let tempMedia = { url: "" };
 
-        async function fetchPosts(category = 'news') {
-            const { data, error } = await supabase
-                .from('posts')
-                .select('*')
-                .eq('category', category)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error fetching:', error);
-                return;
-            }
-            // لێرەدا داتا بۆ هەموو بەکارهێنەران نیشان دەدرێت
-            renderPosts(data); 
+        async function init() {
+            ensureOwnerAccount();
+            document.documentElement.classList.toggle('light-mode', !isDarkMode);
+            await syncPostsWithServer();
+            updateUIScript();
+            updateHeartUI();
+            const lastMain = localStorage.getItem('lastMainTab') || 'news';
+            changeTab(lastMain, document.getElementById('nav-btn-' + lastMain));
         }
+
+        async function syncPostsWithServer() {
+            const { data, error } = await _supabase.from('posts').select('*').order('id', { ascending: false });
+            if (!error && data) {
+                allPosts = data;
+                updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+            }
+        }
+
+        function ensureOwnerAccount() {
+            if (!registeredUsers.find(u => u.email === OWNER_EMAIL)) {
+                registeredUsers.push({ email: OWNER_EMAIL, password: 'belal5171', name: 'Belal', role: 'admin', lastActive: Date.now() });
+                localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            }
+        }
+
+        window.changeTab = (tab, el) => {
+            if(el) {
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
+            }
+            localStorage.setItem('lastMainTab', tab);
+            updateTabContent(tab);
+        };
+
+        window.updateTabContent = (tab) => {
+            const display = document.getElementById('content-display');
+            if (tab === 'account') {
+                renderAuthUI();
+            } else {
+                let filtered = allPosts.filter(p => p.lang === currentLang && p.category === tab);
+                display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">Empty</div>`;
+            }
+        };
+
+        window.renderPostHTML = (p) => {
+            const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
+            return `
+            <div class="post-card animate-fade">
+                ${p.media ? `<img src="${p.media}" class="post-media">` : ''}
+                <div class="post-body">
+                    <div class="flex justify-between items-center mb-2">
+                         <span class="text-[10px] opacity-40">Post ID: ${p.id}</span>
+                         ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500"><i class="fas fa-trash"></i></button>` : ''}
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">${p.title || ''}</h3>
+                    <p class="text-sm opacity-70">${p.desc || ''}</p>
+                </div>
+            </div>`;
+        };
+
+        window.submitPost = async () => {
+            const title = document.getElementById('post-title').value;
+            const desc = document.getElementById('post-desc').value;
+            const cat = document.getElementById('post-category').value;
+            const lang = document.getElementById('post-lang').value;
+
+            if(!title && !desc) return alert("Please fill title or description");
+
+            const newPost = {
+                title, desc, lang,
+                category: cat,
+                userEmail: currentUser?.email || 'guest',
+                adminName: currentUser?.name || 'Admin',
+                media: tempMedia.url,
+                created_at: new Date()
+            };
+
+            const { error } = await _supabase.from('posts').insert([newPost]);
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                closePostModal();
+                tempMedia.url = "";
+                await syncPostsWithServer();
+                alert("Posted Successfully!");
+            }
+        };
+
+        // UI & Auth Helpers
+        window.openPostModal = () => document.getElementById('post-modal').style.display = 'flex';
+        window.closePostModal = () => document.getElementById('post-modal').style.display = 'none';
+        window.openLangMenu = () => document.getElementById('lang-overlay').style.display = 'flex';
+        window.closeLangMenu = () => document.getElementById('lang-overlay').style.display = 'none';
+        window.toggleAdminBar = () => { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } };
+        window.openCloudinaryWidget = () => { cloudinary.openUploadWidget({ cloudName: "dbttb8vmg", uploadPreset: "Hellowuk" }, (err, res) => { if (res.event === "success") { tempMedia.url = res.info.secure_url; document.getElementById('upload-status').innerText = "✅ Done"; } }); };
+        
+        window.renderAuthUI = () => {
+            const display = document.getElementById('content-display');
+            if (currentUser) {
+                display.innerHTML = `<div class="glass-card p-6 text-center"><h2 class="font-bold">${currentUser.name}</h2><button onclick="logout()" class="auth-submit mt-4 !bg-red-500">Logout</button></div>`;
+            } else {
+                display.innerHTML = `<div class="glass-card p-6 text-center"><input id="auth-email" placeholder="Email" class="auth-input"><input id="auth-pass" type="password" placeholder="Pass" class="auth-input"><button onclick="handleLogin()" class="auth-submit">Login</button></div>`;
+            }
+        };
+
+        window.handleLogin = () => {
+            const e = document.getElementById('auth-email').value;
+            const p = document.getElementById('auth-pass').value;
+            const user = registeredUsers.find(u => u.email === e && u.password === p);
+            if (user) { currentUser = user; localStorage.setItem('user', JSON.stringify(user)); init(); } else alert("Error");
+        };
+
+        window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
+        window.deletePost = async (id) => { if(confirm("Delete?")) { await _supabase.from('posts').delete().eq('id', id); syncPostsWithServer(); } };
+        window.updateHeartUI = () => { document.getElementById('main-heart').className = currentUser ? 'fas fa-heart text-red-500' : 'fas fa-heart-broken opacity-30'; };
+        window.checkAuthAndAction = (cb) => { if(!currentUser) alert("Please login"); else cb(); };
+        window.updateUIScript = () => { document.getElementById('active-lang-code').innerText = currentLang.toUpperCase(); };
+        window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); closeLangMenu(); init(); };
+        window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
-    <script src="script.js"></script>
 </body>
 </html>
