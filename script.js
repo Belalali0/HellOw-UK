@@ -31,23 +31,38 @@ async function syncDataWithServer() {
     try {
         // Fetch Posts
         const { data: posts } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
-        if (posts) allPosts = posts;
+        if (posts) {
+            // Only update if posts changed to prevent flickering
+            if (JSON.stringify(allPosts) !== JSON.stringify(posts)) {
+                allPosts = posts;
+            }
+        }
 
         // Fetch Users
         const { data: users } = await _supabase.from('app_users').select('*');
         if (users) {
             registeredUsers = users;
             localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            // Update current user data if changed (like role updates)
+            if (currentUser) {
+                const updatedMe = users.find(u => u.email === currentUser.email);
+                if (updatedMe && JSON.stringify(updatedMe) !== JSON.stringify(currentUser)) {
+                    currentUser = updatedMe;
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    updateBossIcon();
+                }
+            }
         }
 
         // Fetch Comments
         const { data: coms } = await _supabase.from('comments').select('*');
         if (coms) {
-            comments = {};
+            let newComments = {};
             coms.forEach(c => {
-                if (!comments[c.post_id]) comments[c.post_id] = [];
-                comments[c.post_id].push({ id: c.id, parentId: c.parent_id, userEmail: c.user_email, userName: c.user_name, text: c.comment_text });
+                if (!newComments[c.post_id]) newComments[c.post_id] = [];
+                newComments[c.post_id].push({ id: c.id, parentId: c.parent_id, userEmail: c.user_email, userName: c.user_name, text: c.comment_text });
             });
+            comments = newComments;
             localStorage.setItem('postComments', JSON.stringify(comments));
         }
 
@@ -72,16 +87,14 @@ async function syncDataWithServer() {
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SMART UI UPDATE (Doesn't reset if user is typing) ---
+        // --- SMART UI UPDATE (No full reset) ---
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
         if (!isTyping) {
             const currentTab = localStorage.getItem('lastMainTab') || 'news';
-            // Only update if not on account tab to prevent login reset
             if (currentTab !== 'account') {
                 updateTabContent(currentTab);
             }
             
-            // Auto update Admin Stats if open
             if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
                 const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
                 filterUserList(activeTab);
@@ -142,7 +155,6 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
-    // Loop for real-time updates without full UI reset
     setInterval(async () => {
         await trackUserActivity();
         await syncDataWithServer();
@@ -293,7 +305,8 @@ window.updateTabContent = (tab) => {
             }
         }
 
-        display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
+        const newHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
+        if (display.innerHTML !== newHTML) display.innerHTML = newHTML;
     }
 };
 
@@ -371,8 +384,6 @@ window.renderAuthUI = (mode = 'login') => {
         return;
     }
     
-    // Check if user is already typing to prevent cursor reset
-    const activeId = document.activeElement ? document.activeElement.id : null;
     const oldEmail = document.getElementById('auth-email')?.value || "";
     const oldPass = document.getElementById('auth-pass')?.value || "";
     const oldUser = document.getElementById('reg-user')?.value || "";
@@ -382,8 +393,6 @@ window.renderAuthUI = (mode = 'login') => {
     } else {
         display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}" value="${oldUser}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
     }
-    
-    if(activeId && document.getElementById(activeId)) document.getElementById(activeId).focus();
 };
 
 window.handleLogin = async () => {
@@ -549,7 +558,6 @@ window.filterUserList = (filterType) => {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
-        // فلتەری تەنها ئەو گویستانەی ئێستا ئۆنڵاینن و ئەکاونتیان نییە
         const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
             name: g.guest_id,
@@ -558,7 +566,7 @@ window.filterUserList = (filterType) => {
         }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        // نیشاندانی تەنها ئەو گویستانەی ئێستا ئۆنڵاینن
+        // Only show guests who are currently online and don't have an account
         usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
             name: g.guest_id,
@@ -611,7 +619,7 @@ function renderUsers(users) {
             <div class="flex flex-col items-end gap-2">
                 <span class="text-[9px] opacity-30">${isOnline ? 'Online' : timeAgo(u.lastActive)}</span>
                 ${isBoss && !isUserBoss && u.role !== 'guest' ? `
-                    <button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border border-white/10 hover:bg-white/5 transition-all">
+                    <button onclick="toggleUserRole('${u.email}', '${u.role === 'admin' ? 'user' : 'admin'}')" class="px-3 py-1 rounded-full text-[9px] border border-white/10 hover:bg-white/5 transition-all">
                         ${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}
                     </button>
                 ` : ''}
@@ -620,12 +628,22 @@ function renderUsers(users) {
     }).join('') || '<p class="text-center opacity-20 py-10">No users found</p>';
 }
 
+window.toggleUserRole = async (email, newRole) => {
+    if (confirm(`Change role to ${newRole}?`)) {
+        const { error } = await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
+        if (!error) {
+            await syncDataWithServer();
+        } else {
+            alert("Error updating role");
+        }
+    }
+};
+
 function updateCounters() { 
     const now = Date.now(); 
     const ONLINE_LIMIT = 30000;
     
     const totalUsers = registeredUsers.length;
-    // هەژمارکردنی هەموو ئۆنڵاینەکان
     const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
     const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
 
@@ -664,7 +682,6 @@ async function trackUserActivity() {
     const now = Date.now(); 
     if (currentUser) { 
         await _supabase.from('app_users').update({ lastActive: now }).eq('email', currentUser.email);
-        // ئەگەر یوزەر بوو، با لە لیستی گویست نەمێنێت
         await _supabase.from('guest_activity').upsert([{ guest_id: currentUser.email, lastActive: now }], { onConflict: 'guest_id' });
     } else { 
         let gId = localStorage.getItem('guestId');
@@ -812,12 +829,4 @@ function timeAgo(d) {
     if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
     if (s < 604800) return Math.floor(s/86400) + "d " + t.ago;
     if (s < 2592000) return Math.floor(s/604800) + "w " + t.ago;
-    return Math.floor(s/2592000) + "mo " + t.ago;
-}
-
-function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
-function closeAuthAlert() { document.getElementById('auth-alert-modal').style.display = 'none'; }
-function goToAccountTab() { closeAuthAlert(); changeTab('account', document.getElementById('nav-btn-account')); }
-function searchUsers(val) { const filtered = registeredUsers.filter(u => u.email.toLowerCase().includes(val.toLowerCase()) || (u.name && u.name.toLowerCase().includes(val.toLowerCase()))); renderUsers(filtered); }
-
-document.addEventListener('DOMContentLoaded', init);
+    return Math.floor(s/
