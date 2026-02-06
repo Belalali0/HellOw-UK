@@ -88,6 +88,9 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
+    // ناردنی سیگناڵ هەر ٣٠ چرکە جارێک بۆ ئەوەی بزانین یوسەرەکە هێشتا ماوە (Online)
+    setInterval(trackUserActivity, 30000);
+
     _supabase
         .channel('public:posts')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, payload => {
@@ -216,21 +219,16 @@ window.updateTabContent = (tab) => {
     if (tab === 'account') { 
         renderAuthUI(); 
     } else {
-        // فلتەرکردنی پۆستەکان بۆ زمان و کاتێگۆری دیاریکراو
         let filtered = allPosts.filter(p => p.lang === currentLang && p.category === tab);
         
         if (!isBoss) {
-            // بۆ بینەر: تەنها ئەو پۆستانە پیشان بدە کە فاکشنەکەیان شاردراوە نییە
             filtered = filtered.filter(p => !hiddenItems.factions.includes(p.subCategory));
-            // ئەگەر لە بەشی زانیاری یان بازاڕ بوو، فلتەری سەب-کاتێگۆری دەکەین
             if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
                 filtered = filtered.filter(p => p.subCategory === activeSubCategory);
             }
         } else {
-            // بۆ ئۆنەر: ئەگەر کلیکی لە فاکشنێک کردبوو، ئەوە پیشان بدە، ئەگەر نا هەموو پۆستەکانی ئەو بەشە پیشان بدە بۆ سڕینەوە
             if (activeSubCategory && ['info', 'market', 'discount'].includes(tab)) {
                 let subFiltered = filtered.filter(p => p.subCategory === activeSubCategory);
-                // ئەگەر لەناو فاکشنەکە پۆست نەبوو، با هەر هەمووی پیشان بدات بۆ ئەوەی پۆستە ونبووەکان بدۆزێتەوە
                 if(subFiltered.length > 0) filtered = subFiltered;
             }
         }
@@ -458,27 +456,103 @@ window.submitNotif = async () => {
 
 window.openAdminStats = () => { document.getElementById('admin-stats-modal').style.display = 'flex'; filterUserList('all'); };
 window.closeAdminStats = () => document.getElementById('admin-stats-modal').style.display = 'none';
+
 window.filterUserList = (filterType) => {
     const now = Date.now();
+    const ONLINE_LIMIT = 60000; // هەر کەسێک لە ١ خولەکی کۆتاییدا ئەکتیڤ بووبێت بە ئۆنڵاین دادەنرێت
+    
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
     if(document.getElementById('btn-stat-' + filterType)) document.getElementById('btn-stat-' + filterType).classList.add('active');
-    let usersToDisplay = (filterType === 'all') ? registeredUsers : registeredUsers.filter(u => (now - u.lastActive) < 300000);
-    renderUsers(usersToDisplay); updateCounters();
+    
+    let usersToDisplay = [];
+    if (filterType === 'all') {
+        usersToDisplay = registeredUsers;
+    } else if (filterType === 'online') {
+        usersToDisplay = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
+    } else if (filterType === 'guest') {
+        usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).map(g => ({
+            email: "Guest Access",
+            name: g.id,
+            role: 'guest',
+            lastActive: g.lastActive
+        }));
+    }
+    
+    renderUsers(usersToDisplay); 
+    updateCounters();
 };
 
 function renderUsers(users) {
-    const list = document.getElementById('admin-user-list'); const isBoss = currentUser?.email === OWNER_EMAIL;
+    const list = document.getElementById('admin-user-list'); 
+    const isBoss = currentUser?.email === OWNER_EMAIL;
+    const now = Date.now();
+    const ONLINE_LIMIT = 60000;
+
     list.innerHTML = users.map(u => {
+        const isOnline = (now - (u.lastActive || 0)) < ONLINE_LIMIT;
         const isUserBoss = u.email === OWNER_EMAIL;
         const postCount = allPosts.filter(p => p.userEmail === u.email).length;
-        const roleLabel = isUserBoss ? "BOSS" : (u.role === "admin" ? "ADMIN" : "USER");
-        const roleColor = isUserBoss ? "bg-yellow-500/30 border-yellow-500/50" : (u.role === "admin" ? "bg-red-500/30 border-red-500/50" : "bg-blue-500/20 border-blue-500/30");
-        return `<div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade"><div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${(Date.now() - u.lastActive) < 300000 ? 'bg-green-500' : 'bg-gray-500'}"></div><div><div class="flex items-center gap-2"><span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span><span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span></div><span class="text-[10px] opacity-40 italic d-block">${u.email}</span><div class="text-[10px] text-green-400 mt-1 font-bold">Posts: ${postCount}</div></div></div>${isBoss && !isUserBoss ? `<button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border backdrop-blur-lg">${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}</button>` : ''}</div>`;
-    }).join('');
+        
+        let roleLabel = u.role ? u.role.toUpperCase() : "USER";
+        if (isUserBoss) roleLabel = "BOSS";
+        
+        let roleColor = "bg-blue-500/20 border-blue-500/30";
+        if (isUserBoss) roleColor = "bg-yellow-500/30 border-yellow-500/50";
+        else if (u.role === "admin") roleColor = "bg-red-500/30 border-red-500/50";
+        else if (u.role === "guest") roleColor = "bg-gray-500/20 border-gray-500/30";
+
+        return `
+        <div class="glass-card p-3 flex justify-between items-center mb-2 animate-fade">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-bold text-xs">
+                        ${(u.name || u.id || "?")[0].toUpperCase()}
+                    </div>
+                    <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0a0a0a] ${isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-gray-500'}"></div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span>
+                        <span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span>
+                    </div>
+                    <span class="text-[10px] opacity-40 italic block">${u.email}</span>
+                    ${u.role !== 'guest' ? `<div class="text-[10px] text-green-400 mt-1 font-bold">Posts: ${postCount}</div>` : ''}
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <span class="text-[9px] opacity-30">${isOnline ? 'Just now' : timeAgo(u.lastActive)}</span>
+                ${isBoss && !isUserBoss && u.role !== 'guest' ? `
+                    <button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border border-white/10 hover:bg-white/5 transition-all">
+                        ${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}
+                    </button>
+                ` : ''}
+            </div>
+        </div>`;
+    }).join('') || '<p class="text-center opacity-20 py-10">No users found</p>';
 }
 
-window.toggleUserRole = (email) => { if (currentUser?.email !== OWNER_EMAIL) return; const idx = registeredUsers.findIndex(u => u.email === email); if (idx !== -1) { registeredUsers[idx].role = registeredUsers[idx].role === 'admin' ? 'user' : 'admin'; localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); filterUserList('all'); } };
-function updateCounters() { const now = Date.now(); document.getElementById('stat-total-users').innerText = registeredUsers.length; document.getElementById('stat-online-users').innerText = registeredUsers.filter(u => (now - u.lastActive) < 300000).length; document.getElementById('stat-guest-users').innerText = guestActivity.filter(g => (now - g.lastActive) < 300000).length; }
+window.toggleUserRole = (email) => { 
+    if (currentUser?.email !== OWNER_EMAIL) return; 
+    const idx = registeredUsers.findIndex(u => u.email === email); 
+    if (idx !== -1) { 
+        registeredUsers[idx].role = registeredUsers[idx].role === 'admin' ? 'user' : 'admin'; 
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
+        filterUserList('all'); 
+    } 
+};
+
+function updateCounters() { 
+    const now = Date.now(); 
+    const ONLINE_LIMIT = 60000;
+    
+    const totalUsers = registeredUsers.length;
+    const onlineUsers = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
+    const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).length;
+
+    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = onlineUsers; 
+    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = onlineGuests; 
+}
 
 window.showAllNotifs = () => {
     const t = uiTrans[currentLang];
@@ -505,18 +579,34 @@ window.showAllNotifs = () => {
 };
 
 window.openHeartMenu = () => { document.getElementById('heart-overlay').style.display='block'; document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; document.getElementById('fav-nav-tabs').style.display = 'flex'; document.getElementById('notif-toggle-btn').style.display = 'none'; showFavorites('post'); };
+
 function trackUserActivity() { 
-    const now = Date.now(); if (currentUser) { 
+    const now = Date.now(); 
+    if (currentUser) { 
         let idx = registeredUsers.findIndex(u => u.email === currentUser.email); 
-        if (idx !== -1) { registeredUsers[idx].lastActive = now; } 
-        else { registeredUsers.push({ email: currentUser.email, name: currentUser.name, role: 'user', lastActive: now, password: currentUser.password }); } 
+        if (idx !== -1) { 
+            registeredUsers[idx].lastActive = now; 
+        } else { 
+            registeredUsers.push({ email: currentUser.email, name: currentUser.name, role: 'user', lastActive: now, password: currentUser.password }); 
+        } 
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
     } else { 
-        let gId = localStorage.getItem('guestId') || 'Guest_'+Math.floor(Math.random()*1000); localStorage.setItem('guestId', gId); 
-        let gIdx = guestActivity.findIndex(g => g.id === gId); if(gIdx !== -1) guestActivity[gIdx].lastActive = now; else guestActivity.push({id:gId, lastActive:now}); 
+        let gId = localStorage.getItem('guestId') || 'Guest_'+Math.floor(Math.random()*1000); 
+        localStorage.setItem('guestId', gId); 
+        let gIdx = guestActivity.findIndex(g => g.id === gId); 
+        if(gIdx !== -1) {
+            guestActivity[gIdx].lastActive = now;
+        } else {
+            guestActivity.push({id:gId, lastActive:now}); 
+        }
         localStorage.setItem('guestActivity', JSON.stringify(guestActivity)); 
     } 
+    // ئەگەر مۆداڵی ستاتس کراوە بوو، نوێی بکەرەوە
+    if(document.getElementById('admin-stats-modal').style.display === 'flex') {
+        updateCounters();
+    }
 }
+
 function checkNewNotifs() { if(!currentUser) return; const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); const newOnes = allPosts.filter(p => p.category === 'notif' && (p.created_at ? new Date(p.created_at).getTime() : p.id) > lastSeen && p.lang === currentLang); if(newOnes.length > 0) { let i = 0; const inv = setInterval(() => { if(i < newOnes.length) { if(notifOnScreen) fireToast(newOnes[i].title, newOnes[i].desc); i++; } else { clearInterval(inv); localStorage.setItem('lastNotifSeen', Date.now()); } }, 1500); } }
 function fireToast(t, d) { const audio = document.getElementById('notif-sound'); if(audio) audio.play().catch(e=>{}); const toast = document.getElementById('toast-area'); document.getElementById('toast-title').innerText = t; document.getElementById('toast-desc').innerText = d; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 6000); }
 
@@ -627,6 +717,7 @@ window.checkAuthAndAction = (cb) => {
 };
 
 function timeAgo(d) {
+    if(!d) return "...";
     const dateObj = isNaN(d) ? new Date(d) : new Date(parseInt(d));
     const s = Math.floor((new Date() - dateObj) / 1000);
     const t = uiTrans[currentLang];
