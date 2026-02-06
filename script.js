@@ -26,30 +26,62 @@ let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 
-// فەچکردنی پۆستەکان بە شێوەی دروست لە سێرڤەرەوە
-async function syncPostsWithServer() {
+// --- فەنکشنی نوێ بۆ سینککردنی هەموو داتاکان لەگەڵ سێرڤەر ---
+async function syncDataWithServer() {
     try {
-        const { data, error } = await _supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false });
+        // 1. فەچکردنی پۆستەکان
+        const { data: posts } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
+        if (posts) allPosts = posts;
 
-        if (error) throw error;
-
-        if (data) {
-            allPosts = data;
-            const currentTab = localStorage.getItem('lastMainTab') || 'news';
-            updateTabContent(currentTab);
-            updateUIScript();
+        // 2. فەچکردنی یوسەرەکان
+        const { data: users } = await _supabase.from('app_users').select('*');
+        if (users) {
+            registeredUsers = users;
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
         }
+
+        // 3. فەچکردنی کۆمێنتەکان
+        const { data: coms } = await _supabase.from('comments').select('*');
+        if (coms) {
+            comments = {};
+            coms.forEach(c => {
+                if (!comments[c.post_id]) comments[c.post_id] = [];
+                comments[c.post_id].push({ id: c.id, parentId: c.parent_id, userEmail: c.user_email, userName: c.user_name, text: c.comment_text });
+            });
+            localStorage.setItem('postComments', JSON.stringify(comments));
+        }
+
+        // 4. فەچکردنی ڵایکەکان
+        const { data: lks } = await _supabase.from('likes').select('*');
+        if (lks) {
+            likeCounts = {};
+            userFavorites = {};
+            lks.forEach(l => {
+                likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
+                if (!userFavorites[l.user_email]) userFavorites[l.user_email] = [];
+                userFavorites[l.user_email].push({ id: l.post_id, likedAt: l.created_at });
+            });
+            localStorage.setItem('likeCounts', JSON.stringify(likeCounts));
+            localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
+        }
+
+        const currentTab = localStorage.getItem('lastMainTab') || 'news';
+        updateTabContent(currentTab);
+        updateUIScript();
+        updateHeartUI();
     } catch (err) {
-        console.error('Fetch Error:', err.message);
+        console.error('Sync Error:', err.message);
     }
+}
+
+async function syncPostsWithServer() {
+    await syncDataWithServer();
 }
 
 function ensureOwnerAccount() {
     const ownerIdx = registeredUsers.findIndex(u => u.email === OWNER_EMAIL);
     if (ownerIdx === -1) {
+        // ئەگەر نەیبوو لە ناوخۆ دروستی بکە، دواتر لە لۆگیندا دەچێتە سێرڤەر
         registeredUsers.push({ email: OWNER_EMAIL, password: 'belal5171', name: 'Belal', role: 'admin', lastActive: Date.now() });
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
     } else {
@@ -62,7 +94,7 @@ function ensureOwnerAccount() {
 const uiTrans = {
     ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ پۆستێک نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەتەوێت ئەکاونت دروست بکەیت؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
     en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "No posts yet", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
-    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "لا يوجد منشورات", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
+    ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفصّلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "لا يوجد منشورات", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
     fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "پستی وجود ندارد", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید ساخت حساب کاربری سازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
 };
 
@@ -76,7 +108,7 @@ async function init() {
     ensureOwnerAccount();
     document.documentElement.classList.toggle('light-mode', !isDarkMode);
     
-    await syncPostsWithServer();
+    await syncDataWithServer();
     
     updateUIScript();
     updateHeartUI();
@@ -94,10 +126,10 @@ async function init() {
     setInterval(trackUserActivity, 10000);
 
     _supabase
-        .channel('public:posts')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, payload => {
-            syncPostsWithServer();
-        })
+        .channel('global-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => syncDataWithServer())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => syncDataWithServer())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, () => syncDataWithServer())
         .subscribe();
 }
 
@@ -319,27 +351,27 @@ window.renderAuthUI = (mode = 'login') => {
     }
 };
 
-window.handleLogin = () => {
+window.handleLogin = async () => {
     const e = document.getElementById('auth-email').value.trim();
     const p = document.getElementById('auth-pass').value.trim();
     const user = registeredUsers.find(u => u.email === e && u.password === p);
     if (user) { 
         currentUser = user; 
         localStorage.setItem('user', JSON.stringify(currentUser)); 
-        trackUserActivity(); 
+        await trackUserActivity(); 
+        await syncDataWithServer();
         init(); 
     } else { 
         alert(uiTrans[currentLang].authFail); 
     }
 };
 
-window.handleRegister = () => {
+window.handleRegister = async () => {
     const u = document.getElementById('reg-user').value.trim();
     const e = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-pass').value.trim();
     if (!u || !e || !p) return;
     
-    // پشکنین کە ئایا پێشتر دروستکراوە
     if (registeredUsers.some(user => user.email === e)) { 
         alert("This Email already exists!"); 
         return; 
@@ -353,44 +385,30 @@ window.handleRegister = () => {
         lastActive: Date.now() 
     };
     
-    registeredUsers.push(newUser); 
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-    alert(uiTrans[currentLang].regSuccess); 
-    renderAuthUI('login');
+    // ناردن بۆ Supabase بۆ ئەوەی هەمیشەیی بێت
+    const { error } = await _supabase.from('app_users').insert([newUser]);
+    if (!error) {
+        alert(uiTrans[currentLang].regSuccess); 
+        await syncDataWithServer();
+        renderAuthUI('login');
+    } else {
+        alert("Error creating account: " + error.message);
+    }
 };
 
 window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
 
-window.toggleFavorite = (id) => {
-    checkAuthAndAction(() => {
-        const key = currentUser.email;
-        if(!userFavorites[key]) userFavorites[key] = [];
-        const idx = userFavorites[key].findIndex(f => f.id === id);
-        if(!likeCounts[id]) likeCounts[id] = 0;
-        const isCurrentlyLiked = idx !== -1;
+window.toggleFavorite = async (id) => {
+    checkAuthAndAction(async () => {
+        const email = currentUser.email;
+        const isCurrentlyLiked = (userFavorites[email] || []).some(f => f.id === id);
+        
         if(!isCurrentlyLiked) { 
-            userFavorites[key].unshift({ id: id, likedAt: Date.now() }); 
-            likeCounts[id]++; 
+            await _supabase.from('likes').insert([{ post_id: id, user_email: email }]);
         } else { 
-            userFavorites[key].splice(idx, 1); 
-            likeCounts[id]--; 
+            await _supabase.from('likes').delete().eq('post_id', id).eq('user_email', email);
         }
-        localStorage.setItem('userFavorites', JSON.stringify(userFavorites)); 
-        localStorage.setItem('likeCounts', JSON.stringify(likeCounts));
-        document.querySelectorAll(`[id="like-btn-${id}"]`).forEach(btn => {
-            const icon = btn.querySelector('i');
-            const countText = btn.querySelector(`[id="like-count-${id}"]`);
-            if (icon) {
-                if(!isCurrentlyLiked) {
-                    icon.className = 'fas fa-heart text-red-500 text-xl transition-all duration-300 scale-125';
-                    setTimeout(()=>icon.classList.remove('scale-125'), 200);
-                } else {
-                    icon.className = 'far fa-heart opacity-50 text-xl transition-all duration-300';
-                }
-            }
-            if (countText) countText.innerText = likeCounts[id];
-        });
-        updateHeartUI();
+        await syncDataWithServer();
     });
 };
 
@@ -448,7 +466,7 @@ window.submitPost = async () => {
         document.getElementById('upload-status').innerText = "";
 
         closePostModal(); 
-        await syncPostsWithServer();
+        await syncDataWithServer();
     } catch (err) {
         alert("Error saving post: " + err.message);
     }
@@ -474,7 +492,7 @@ window.submitNotif = async () => {
 
     await _supabase.from('posts').insert([newNotif]);
     closeNotifModal(); 
-    await syncPostsWithServer();
+    await syncDataWithServer();
     if(lang === currentLang && currentUser && notifOnScreen) fireToast(title || "Notif", desc || "");
 };
 
@@ -486,7 +504,7 @@ window.closeAdminStats = () => document.getElementById('admin-stats-modal').styl
 
 window.filterUserList = (filterType) => {
     const now = Date.now();
-    const ONLINE_LIMIT = 40000; // هەر کەسێک لە ٤٠ چرکەی کۆتایی چالاک بووبێت
+    const ONLINE_LIMIT = 40000;
     
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
     const activeBtn = document.getElementById('btn-stat-' + filterType);
@@ -559,14 +577,14 @@ function renderUsers(users) {
     }).join('') || '<p class="text-center opacity-20 py-10">No users found</p>';
 }
 
-window.toggleUserRole = (email) => { 
+window.toggleUserRole = async (email) => { 
     if (currentUser?.email !== OWNER_EMAIL) return; 
-    const idx = registeredUsers.findIndex(u => u.email === email); 
-    if (idx !== -1) { 
-        registeredUsers[idx].role = registeredUsers[idx].role === 'admin' ? 'user' : 'admin'; 
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
-        filterUserList('all'); 
-    } 
+    const user = registeredUsers.find(u => u.email === email);
+    if (user) {
+        const newRole = user.role === 'admin' ? 'user' : 'admin';
+        await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
+        await syncDataWithServer();
+    }
 };
 
 function updateCounters() { 
@@ -608,20 +626,10 @@ window.showAllNotifs = () => {
 
 window.openHeartMenu = () => { document.getElementById('heart-overlay').style.display='block'; document.getElementById('fav-title-main').innerText = uiTrans[currentLang].fav; document.getElementById('fav-nav-tabs').style.display = 'flex'; document.getElementById('notif-toggle-btn').style.display = 'none'; showFavorites('post'); };
 
-function trackUserActivity() { 
+async function trackUserActivity() { 
     const now = Date.now(); 
-    // هەمیشە لیستی تازە بخوێنەرەوە بۆ دڵنیایی
-    registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
-
     if (currentUser) { 
-        let idx = registeredUsers.findIndex(u => u.email === currentUser.email); 
-        if (idx !== -1) { 
-            registeredUsers[idx].lastActive = now; 
-        } else { 
-            registeredUsers.push({ email: currentUser.email, name: currentUser.name, role: 'user', lastActive: now, password: currentUser.password }); 
-        } 
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
+        await _supabase.from('app_users').update({ lastActive: now }).eq('email', currentUser.email);
     } else { 
         let gId = localStorage.getItem('guestId');
         if(!gId) {
@@ -636,8 +644,6 @@ function trackUserActivity() {
         }
         localStorage.setItem('guestActivity', JSON.stringify(guestActivity)); 
     } 
-    
-    // ئەگەر مۆداڵی ستاتس کراوە بوو، ڕاستەوخۆ نوێی بکەرەوە
     if(document.getElementById('admin-stats-modal').style.display === 'flex') {
         updateCounters();
     }
@@ -691,24 +697,41 @@ function renderSingleComment(c, isRep) {
     </div>`;
 }
 
-window.submitComment = () => {
+window.submitComment = async () => {
     const input = document.getElementById('comment-input');
     if(!input.value.trim()) return;
-    if(!comments[activeCommentPostId]) comments[activeCommentPostId] = [];
-    comments[activeCommentPostId].push({ id: Date.now(), parentId: replyingToId, userEmail: currentUser.email, userName: (currentUser.name || currentUser.email.split('@')[0]), text: input.value });
-    localStorage.setItem('postComments', JSON.stringify(comments));
-    input.value = ''; replyingToId = null; renderComments(); updateTabContent(localStorage.getItem('lastMainTab'));
+    
+    const newCom = { 
+        post_id: activeCommentPostId, 
+        parent_id: replyingToId, 
+        user_email: currentUser.email, 
+        user_name: (currentUser.name || currentUser.email.split('@')[0]), 
+        comment_text: input.value 
+    };
+
+    const { error } = await _supabase.from('comments').insert([newCom]);
+    if(!error) {
+        input.value = ''; replyingToId = null; 
+        await syncDataWithServer();
+        renderComments();
+    }
 };
+
 window.setReply = (id) => { replyingToId = id; updateCommentInputArea(); document.getElementById('comment-input').focus(); };
 window.cancelReply = () => { replyingToId = null; updateCommentInputArea(); };
-window.deleteComment = (comId) => { if(!confirm("Delete?")) return; comments[activeCommentPostId] = comments[activeCommentPostId].filter(c => c.id !== comId && c.parentId !== comId); localStorage.setItem('postComments', JSON.stringify(comments)); renderComments(); updateTabContent(localStorage.getItem('lastMainTab')); };
+
+window.deleteComment = async (comId) => { 
+    if(!confirm("Delete?")) return; 
+    await _supabase.from('comments').delete().eq('id', comId);
+    await syncDataWithServer();
+    renderComments();
+};
 
 window.deletePost = async (id) => { 
     if(confirm('Delete?')) { 
         const { error } = await _supabase.from('posts').delete().eq('id', id);
         if (!error) {
-            allPosts = allPosts.filter(x => x.id !== id);
-            await syncPostsWithServer();
+            await syncDataWithServer();
         } else {
             alert("Error deleting post");
         }
