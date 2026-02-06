@@ -31,25 +31,19 @@ async function syncDataWithServer() {
     try {
         // Fetch Posts
         const { data: posts } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
-        if (posts) {
-            // Only update if posts changed to prevent flickering
-            if (JSON.stringify(allPosts) !== JSON.stringify(posts)) {
-                allPosts = posts;
-            }
-        }
+        if (posts) allPosts = posts;
 
         // Fetch Users
         const { data: users } = await _supabase.from('app_users').select('*');
         if (users) {
             registeredUsers = users;
             localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-            // Update current user data if changed (like role updates)
-            if (currentUser) {
-                const updatedMe = users.find(u => u.email === currentUser.email);
-                if (updatedMe && JSON.stringify(updatedMe) !== JSON.stringify(currentUser)) {
-                    currentUser = updatedMe;
+            // Update current user role from server
+            if(currentUser) {
+                const me = users.find(u => u.email === currentUser.email);
+                if(me) {
+                    currentUser = me;
                     localStorage.setItem('user', JSON.stringify(currentUser));
-                    updateBossIcon();
                 }
             }
         }
@@ -57,12 +51,11 @@ async function syncDataWithServer() {
         // Fetch Comments
         const { data: coms } = await _supabase.from('comments').select('*');
         if (coms) {
-            let newComments = {};
+            comments = {};
             coms.forEach(c => {
-                if (!newComments[c.post_id]) newComments[c.post_id] = [];
-                newComments[c.post_id].push({ id: c.id, parentId: c.parent_id, userEmail: c.user_email, userName: c.user_name, text: c.comment_text });
+                if (!comments[c.post_id]) comments[c.post_id] = [];
+                comments[c.post_id].push({ id: c.id, parentId: c.parent_id, userEmail: c.user_email, userName: c.user_name, text: c.comment_text });
             });
-            comments = newComments;
             localStorage.setItem('postComments', JSON.stringify(comments));
         }
 
@@ -87,7 +80,7 @@ async function syncDataWithServer() {
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SMART UI UPDATE (No full reset) ---
+        // --- SMART UI UPDATE (Doesn't reset if user is typing) ---
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
         if (!isTyping) {
             const currentTab = localStorage.getItem('lastMainTab') || 'news';
@@ -160,7 +153,6 @@ async function init() {
         await syncDataWithServer();
     }, 5000);
 
-    // Supabase Channels
     _supabase
         .channel('global-sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => syncDataWithServer())
@@ -305,8 +297,11 @@ window.updateTabContent = (tab) => {
             }
         }
 
-        const newHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
-        if (display.innerHTML !== newHTML) display.innerHTML = newHTML;
+        const newContent = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
+        // Optimization: Only update DOM if HTML changed
+        if (display.innerHTML !== newContent) {
+            display.innerHTML = newContent;
+        }
     }
 };
 
@@ -384,14 +379,10 @@ window.renderAuthUI = (mode = 'login') => {
         return;
     }
     
-    const oldEmail = document.getElementById('auth-email')?.value || "";
-    const oldPass = document.getElementById('auth-pass')?.value || "";
-    const oldUser = document.getElementById('reg-user')?.value || "";
-
     if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
     } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}" value="${oldUser}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
     }
 };
 
@@ -501,13 +492,11 @@ window.submitPost = async () => {
     try {
         const { error } = await _supabase.from('posts').insert([newPost]);
         if (error) throw error;
-
         document.getElementById('post-title').value = "";
         document.getElementById('post-desc').value = "";
         if(document.getElementById('post-external-link')) document.getElementById('post-external-link').value = "";
         tempMedia = { url: "", type: "" };
         document.getElementById('upload-status').innerText = "";
-
         closePostModal(); 
         await syncDataWithServer();
     } catch (err) {
@@ -566,7 +555,7 @@ window.filterUserList = (filterType) => {
         }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        // Only show guests who are currently online and don't have an account
+        // Only show guests who are currently online and don't have accounts
         usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
             name: g.guest_id,
@@ -629,20 +618,18 @@ function renderUsers(users) {
 }
 
 window.toggleUserRole = async (email, newRole) => {
-    if (confirm(`Change role to ${newRole}?`)) {
-        const { error } = await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
-        if (!error) {
-            await syncDataWithServer();
-        } else {
-            alert("Error updating role");
-        }
+    if(!confirm(`Change role to ${newRole.toUpperCase()}?`)) return;
+    const { error } = await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
+    if (!error) {
+        await syncDataWithServer();
+    } else {
+        alert("Role update failed!");
     }
 };
 
 function updateCounters() { 
     const now = Date.now(); 
     const ONLINE_LIMIT = 30000;
-    
     const totalUsers = registeredUsers.length;
     const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
     const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
@@ -744,44 +731,15 @@ function renderSingleComment(c, isRep) {
 window.submitComment = async () => {
     const input = document.getElementById('comment-input');
     if(!input.value.trim()) return;
-    
-    const newCom = { 
-        post_id: activeCommentPostId, 
-        parent_id: replyingToId, 
-        user_email: currentUser.email, 
-        user_name: (currentUser.name || currentUser.email.split('@')[0]), 
-        comment_text: input.value 
-    };
-
+    const newCom = { post_id: activeCommentPostId, parent_id: replyingToId, user_email: currentUser.email, user_name: (currentUser.name || currentUser.email.split('@')[0]), comment_text: input.value };
     const { error } = await _supabase.from('comments').insert([newCom]);
-    if(!error) {
-        input.value = ''; replyingToId = null; 
-        await syncDataWithServer();
-        renderComments();
-    }
+    if(!error) { input.value = ''; replyingToId = null; await syncDataWithServer(); renderComments(); }
 };
 
 window.setReply = (id) => { replyingToId = id; updateCommentInputArea(); document.getElementById('comment-input').focus(); };
 window.cancelReply = () => { replyingToId = null; updateCommentInputArea(); };
-
-window.deleteComment = async (comId) => { 
-    if(!confirm("Delete?")) return; 
-    await _supabase.from('comments').delete().eq('id', comId);
-    await syncDataWithServer();
-    renderComments();
-};
-
-window.deletePost = async (id) => { 
-    if(confirm('Delete?')) { 
-        const { error } = await _supabase.from('posts').delete().eq('id', id);
-        if (!error) {
-            await syncDataWithServer();
-        } else {
-            alert("Error deleting post");
-        }
-    } 
-};
-
+window.deleteComment = async (comId) => { if(!confirm("Delete?")) return; await _supabase.from('comments').delete().eq('id', comId); await syncDataWithServer(); renderComments(); };
+window.deletePost = async (id) => { if(confirm('Delete?')) { const { error } = await _supabase.from('posts').delete().eq('id', id); if (!error) await syncDataWithServer(); } };
 window.logout = () => { currentUser = null; localStorage.removeItem('user'); init(); };
 window.changeLanguage = (l) => { currentLang = l; localStorage.setItem('appLang', l); init(); closeLangMenu(); };
 window.toggleTheme = () => { isDarkMode = !isDarkMode; localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); init(); };
@@ -804,19 +762,8 @@ window.checkAuthAndAction = (cb) => {
         const t = uiTrans[currentLang];
         const modal = document.getElementById('auth-alert-modal');
         modal.style.display = 'flex';
-        modal.innerHTML = `
-            <div class="glass-card p-6 w-80 animate-fade text-center border-red-500/20">
-                <i class="fas fa-user-shield text-3xl text-red-500 mb-4"></i>
-                <h3 class="font-bold text-lg mb-2">${t.authErr}</h3>
-                <p class="text-xs opacity-50 mb-6">${t.wantReg}</p>
-                <div class="flex gap-3">
-                    <button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold">${t.yes}</button>
-                    <button onclick="closeAuthAlert()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold">${t.no}</button>
-                </div>
-            </div>`;
-    } else {
-        cb();
-    }
+        modal.innerHTML = `<div class="glass-card p-6 w-80 animate-fade text-center border-red-500/20"><i class="fas fa-user-shield text-3xl text-red-500 mb-4"></i><h3 class="font-bold text-lg mb-2">${t.authErr}</h3><p class="text-xs opacity-50 mb-6">${t.wantReg}</p><div class="flex gap-3"><button onclick="goToAccountTab()" class="flex-1 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-bold">${t.yes}</button><button onclick="closeAuthAlert()" class="flex-1 py-3 bg-white/5 rounded-xl font-bold">${t.no}</button></div></div>`;
+    } else cb();
 };
 
 function timeAgo(d) {
@@ -827,6 +774,3 @@ function timeAgo(d) {
     if (s < 60) return t.now;
     if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
     if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
-    if (s < 604800) return Math.floor(s/86400) + "d " + t.ago;
-    if (s < 2592000) return Math.floor(s/604800) + "w " + t.ago;
-    return Math.floor(s/
