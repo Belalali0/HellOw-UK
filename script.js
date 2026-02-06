@@ -2,7 +2,7 @@
 const supabaseUrl = 'https://yqjfdtrjngwaoeygeiqh.supabase.co';
 const supabaseKey = 'sb_publishable_kR58sr2ch1wun_WmJqmetw_ailryRxc';
 
-// چاککردنی دەستپێکردنی supabase
+// Initialize Supabase
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
@@ -21,26 +21,26 @@ let currentFavTab = 'post';
 let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
 
-// لێرەدا لیستی یوسەرەکان هەمیشە نوێ دەبێتەوە
+// User List Data
 let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 
-// --- فەنکشنی نوێ بۆ سینککردنی هەموو داتاکان لەگەڵ سێرڤەر ---
+// --- Sync Data Function (Optimized to NOT break UI) ---
 async function syncDataWithServer() {
     try {
-        // 1. فەچکردنی پۆستەکان
+        // Fetch Posts
         const { data: posts } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
         if (posts) allPosts = posts;
 
-        // 2. فەچکردنی یوسەرەکان
+        // Fetch Users
         const { data: users } = await _supabase.from('app_users').select('*');
         if (users) {
             registeredUsers = users;
             localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
         }
 
-        // 3. فەچکردنی کۆمێنتەکان
+        // Fetch Comments
         const { data: coms } = await _supabase.from('comments').select('*');
         if (coms) {
             comments = {};
@@ -51,7 +51,7 @@ async function syncDataWithServer() {
             localStorage.setItem('postComments', JSON.stringify(comments));
         }
 
-        // 4. فەچکردنی ڵایکەکان
+        // Fetch Likes
         const { data: lks } = await _supabase.from('likes').select('*');
         if (lks) {
             likeCounts = {};
@@ -65,23 +65,31 @@ async function syncDataWithServer() {
             localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
         }
 
-        // 5. فەچکردنی گێست لە سێرڤەر
+        // Fetch Guests from Server
         const { data: guests } = await _supabase.from('guest_activity').select('*');
         if (guests) {
             guestActivity = guests;
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // ئەگەر مۆداڵی ستات کراوە بوو، نوێی بکەرەوە بێ ڕیفرێش
-        if(document.getElementById('admin-stats-modal').style.display === 'flex') {
-            const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
-            filterUserList(activeTab);
+        // --- SMART UI UPDATE (Doesn't reset if user is typing) ---
+        const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+        if (!isTyping) {
+            const currentTab = localStorage.getItem('lastMainTab') || 'news';
+            // Only update if not on account tab to prevent login reset
+            if (currentTab !== 'account') {
+                updateTabContent(currentTab);
+            }
+            
+            // Auto update Admin Stats if open
+            if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
+                const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
+                filterUserList(activeTab);
+            }
+            updateUIScript();
+            updateHeartUI();
+            updateBossIcon();
         }
-
-        const currentTab = localStorage.getItem('lastMainTab') || 'news';
-        updateTabContent(currentTab);
-        updateUIScript();
-        updateHeartUI();
     } catch (err) {
         console.error('Sync Error:', err.message);
     }
@@ -134,12 +142,13 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
-    // ناردنی سیگناڵ هەر ٥ چرکە جارێک بۆ ئەوەی بێ ڕیفرێش ئۆنڵاینەکان ببینی
+    // Loop for real-time updates without full UI reset
     setInterval(async () => {
         await trackUserActivity();
         await syncDataWithServer();
     }, 5000);
 
+    // Supabase Channels
     _supabase
         .channel('global-sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => syncDataWithServer())
@@ -361,11 +370,20 @@ window.renderAuthUI = (mode = 'login') => {
         display.innerHTML = `<div class="glass-card p-8 text-center animate-fade"><div class="w-16 h-16 bg-white/10 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">${currentUser.email[0].toUpperCase()}</div><h2 class="text-xl font-bold mb-2">${currentUser.name || currentUser.email.split('@')[0]}</h2><p class="text-xs opacity-40 mb-6">${currentUser.email}</p><button class="auth-submit !bg-red-500/20 !text-red-400 !border-red-500/30" onclick="logout()">${t.logout}</button></div>`;
         return;
     }
+    
+    // Check if user is already typing to prevent cursor reset
+    const activeId = document.activeElement ? document.activeElement.id : null;
+    const oldEmail = document.getElementById('auth-email')?.value || "";
+    const oldPass = document.getElementById('auth-pass')?.value || "";
+    const oldUser = document.getElementById('reg-user')?.value || "";
+
     if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
     } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}" value="${oldUser}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
     }
+    
+    if(activeId && document.getElementById(activeId)) document.getElementById(activeId).focus();
 };
 
 window.handleLogin = async () => {
@@ -520,7 +538,7 @@ window.closeAdminStats = () => document.getElementById('admin-stats-modal').styl
 
 window.filterUserList = (filterType) => {
     const now = Date.now();
-    const ONLINE_LIMIT = 30000; // کەمکرایەوە بۆ ٣٠ چرکە بۆ وردی زیاتر
+    const ONLINE_LIMIT = 30000;
     
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
     const activeBtn = document.getElementById('btn-stat-' + filterType);
@@ -530,7 +548,6 @@ window.filterUserList = (filterType) => {
     if (filterType === 'all') {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
-        // یوسەرە ئۆنڵاینەکان + گێستە ئۆنڵاینەکان
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
         const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).map(g => ({
             email: "Guest Access",
@@ -576,13 +593,13 @@ function renderUsers(users) {
             <div class="flex items-center gap-3">
                 <div class="relative">
                     <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-bold text-xs">
-                        ${(u.name || u.guest_id || "?")[0].toUpperCase()}
+                        ${(u.name || "?")[0].toUpperCase()}
                     </div>
                     <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0a0a0a] ${isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-gray-500'}"></div>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="font-bold text-sm">${u.name || (u.role === 'guest' ? u.name : u.email.split('@')[0])}</span>
+                        <span class="font-bold text-sm">${u.name || (u.email.split('@')[0])}</span>
                         <span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span>
                     </div>
                     <span class="text-[10px] opacity-40 italic block">${u.email}</span>
@@ -650,7 +667,6 @@ async function trackUserActivity() {
             gId = 'Guest_' + Math.floor(Math.random()*9000 + 1000);
             localStorage.setItem('guestId', gId);
         }
-        // دڵنیابوونەوە لەوەی ناردنی گێست بۆ سێرڤەر بە دروستی کار دەکات
         await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }], { onConflict: 'guest_id' });
     } 
 }
