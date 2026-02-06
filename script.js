@@ -61,7 +61,7 @@ const uiTrans = {
     ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ پۆستێک نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەتەوێت ئەکاونت دروست بکەیت؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
     en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "No posts yet", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
     ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "لا يوجد منشورات", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
-    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "پستی وجود ندارد", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
+    fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "پستی وجود ندارد", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید ساخت حساب کاربری سازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
 };
 
 const subCategories = {
@@ -189,7 +189,7 @@ window.updateTabContent = (tab) => {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
             const isHiddenByBoss = hiddenItems.factions && hiddenItems.factions.includes(sub);
             const hasPostsInSub = allPosts.some(p => p.category === tab && p.subCategory === sub && p.lang === currentLang);
-            if (isBoss) return true;
+            if (isBoss) return true; 
             return !isHiddenByBoss && hasPostsInSub; 
         });
 
@@ -205,8 +205,9 @@ window.updateTabContent = (tab) => {
                 </button>
             `).join('');
         } else {
-            subNav.style.display = 'none';
-            activeSubCategory = null;
+            subNav.style.display = isBoss ? 'block' : 'none';
+            subBar.innerHTML = isBoss ? '<p class="text-[10px] opacity-30 p-2">No Active Factions for Users</p>' : '';
+            activeSubCategory = isBoss ? activeSubCategory : null;
         }
     } else { 
         subNav.style.display = 'none'; 
@@ -215,14 +216,23 @@ window.updateTabContent = (tab) => {
     if (tab === 'account') { 
         renderAuthUI(); 
     } else {
+        // فلتەرکردنی پۆستەکان بۆ زمان و کاتێگۆری دیاریکراو
         let filtered = allPosts.filter(p => p.lang === currentLang && p.category === tab);
-        if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
-            filtered = filtered.filter(p => p.subCategory === activeSubCategory);
-        }
         
-        // ئەگەر ئۆنەر نەبوو، ئەو پۆستانەی لە فاکشنی شاردراوەن نیشان مەدە
         if (!isBoss) {
+            // بۆ بینەر: تەنها ئەو پۆستانە پیشان بدە کە فاکشنەکەیان شاردراوە نییە
             filtered = filtered.filter(p => !hiddenItems.factions.includes(p.subCategory));
+            // ئەگەر لە بەشی زانیاری یان بازاڕ بوو، فلتەری سەب-کاتێگۆری دەکەین
+            if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
+                filtered = filtered.filter(p => p.subCategory === activeSubCategory);
+            }
+        } else {
+            // بۆ ئۆنەر: ئەگەر کلیکی لە فاکشنێک کردبوو، ئەوە پیشان بدە، ئەگەر نا هەموو پۆستەکانی ئەو بەشە پیشان بدە بۆ سڕینەوە
+            if (activeSubCategory && ['info', 'market', 'discount'].includes(tab)) {
+                let subFiltered = filtered.filter(p => p.subCategory === activeSubCategory);
+                // ئەگەر لەناو فاکشنەکە پۆست نەبوو، با هەر هەمووی پیشان بدات بۆ ئەوەی پۆستە ونبووەکان بدۆزێتەوە
+                if(subFiltered.length > 0) filtered = subFiltered;
+            }
         }
 
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
@@ -271,7 +281,7 @@ window.renderPostHTML = (p) => {
                 <span class="text-[10px] opacity-40 mb-2">${timeAgo(p.created_at || p.id)}</span>
                 <div class="flex gap-3 items-center">
                     ${linkBtnHTML}
-                    ${isBoss ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40 hover:opacity-100"><i class="fas fa-trash-alt"></i></button>` : ''}
+                    ${isBoss ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40 hover:opacity-100 p-2"><i class="fas fa-trash-alt"></i></button>` : ''}
                 </div>
             </div>
             ${p.title ? `<div class="glass-title"><h3 class="font-bold text-lg">${p.title}</h3></div>` : ''}
