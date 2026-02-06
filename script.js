@@ -72,13 +72,24 @@ async function syncDataWithServer() {
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SMART UI UPDATE (Doesn't reset if user is typing) ---
+        // --- SMART UI UPDATE (Silent Update - Prevent Jump) ---
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
         if (!isTyping) {
             const currentTab = localStorage.getItem('lastMainTab') || 'news';
-            // Only update if not on account tab to prevent login reset
+            // Only update counts and essential UI elements silently
+            updateCounters();
+            updateHeartUI();
+            updateBossIcon();
+            
+            // Check if we need to update content without resetting entire scroll
             if (currentTab !== 'account') {
-                updateTabContent(currentTab);
+                // updateUIScript call
+                const t = uiTrans[currentLang]; 
+                const activeCodeEl = document.getElementById('active-lang-code');
+                if(activeCodeEl) activeCodeEl.innerText = currentLang.toUpperCase(); 
+                
+                // Keep the existing tab content but refresh data silently
+                updateUIScript(); 
             }
             
             // Auto update Admin Stats if open
@@ -86,9 +97,6 @@ async function syncDataWithServer() {
                 const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
                 filterUserList(activeTab);
             }
-            updateUIScript();
-            updateHeartUI();
-            updateBossIcon();
         }
     } catch (err) {
         console.error('Sync Error:', err.message);
@@ -97,6 +105,9 @@ async function syncDataWithServer() {
 
 async function syncPostsWithServer() {
     await syncDataWithServer();
+    // Force a visual refresh after manual action
+    const currentTab = localStorage.getItem('lastMainTab') || 'news';
+    updateTabContent(currentTab);
 }
 
 function ensureOwnerAccount() {
@@ -142,7 +153,7 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
-    // Loop for real-time updates without full UI reset
+    // Loop for real-time updates (Silent tracking)
     setInterval(async () => {
         await trackUserActivity();
         await syncDataWithServer();
