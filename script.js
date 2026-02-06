@@ -30,7 +30,7 @@ async function syncPostsWithServer() {
         const { data, error } = await _supabase
             .from('posts')
             .select('*')
-            .order('created_at', { ascending: false }); // گۆڕینی id بۆ created_at
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
 
@@ -58,7 +58,7 @@ function ensureOwnerAccount() {
 }
 
 const uiTrans = {
-    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ پۆستێک نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەکاونتت هەیە؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
+    ku: { news: "هەواڵ", info: "زانیاری", market: "بازاڕ", discount: "داشکاندن", account: "ئەکاونت", fav: "دڵخوازەکان", notifSec: "بەشی نۆتفیکەیشن", login: "چوونە ژوورەوە", logout: "دەرچوون", email: "ئیمەیڵ", empty: "هیچ پۆستێک نییە", ago: "لەمەوپێش", now: "ئێستا", rep: "وەڵام", del: "سڕینەوە", edit: "دەستکاری", authErr: "ببورە پێویستە ئەکاونتت هەبێت", yes: "بەڵێ", no: "نەخێر", post: "پۆستەکان", notif: "نۆتفی", time_left: "ماوە:", ads_for: "بۆ ماوەی:", pass: "پاسۆرد", user: "ناو", register: "دروستکردنی ئەکاونت", noAcc: "ئەکاونتت نییە؟", hasAcc: "ئەتەوێت ئەکاونت دروست بکەیت؟", authFail: "ئیمەیڵ یان پاسۆرد هەڵەیە", regSuccess: "ئەکاونت دروستکرا", post_time: "کاتی پۆست:", noComment: "ناتوانی کۆمێنت بکەی ئەگەر ئەکاونتت نەبێت", wantReg: "ئەتەوێت ئەکاونت دروست بکەیت؟", notifMsg: "ئەگەر بێتاقەتیت و بێزاری ئەکاونت دروست بکە من هەموو ڕۆژێک ئینێرجی باشت پێ ئەدەم بۆ ڕۆژەکەت" },
     en: { news: "News", info: "Info", market: "Market", discount: "Discount", account: "Account", fav: "Favorites", notifSec: "Notification Section", login: "Login", logout: "Logout", email: "Email", empty: "No posts yet", ago: "ago", now: "now", rep: "Reply", del: "Delete", edit: "Edit", authErr: "Sorry, you need an account", yes: "Yes", no: "No", post: "Posts", notif: "Notif", time_left: "Left:", ads_for: "For:", pass: "Password", user: "Username", register: "Register", noAcc: "No account?", hasAcc: "Have account?", authFail: "Wrong email or password", regSuccess: "Account Created", post_time: "Post time:", noComment: "You cannot comment without an account", wantReg: "Do you want to create an account?", notifMsg: "If you're bored or tired, create an account and I'll give you good energy every day for your day" },
     ar: { news: "الأخبار", info: "معلومات", market: "السوق", discount: "تخفیضات", account: "الحساب", fav: "المفضلة", notifSec: "قسم الإشعارات", login: "تسجيل الدخول", logout: "تسجيل الخروج", email: "الإيميل", empty: "لا يوجد منشورات", ago: "منذ", now: "الآن", rep: "رد", del: "حذف", edit: "تعديل", authErr: "عذراً، يجب أن يكون لديك حساب", yes: "نعم", no: "لا", post: "المنشورات", notif: "إشعار", time_left: "باقي:", ads_for: "لمدة:", pass: "كلمة السر", user: "الاسم", register: "إنشاء حساب", noAcc: "ليس لديك حساب؟", hasAcc: "لديك حساب؟", authFail: "الإيميل أو كلمة السر خطأ", regSuccess: "تم إنشاء الحساب", post_time: "وقت النشر:", noComment: "لا يمكنك التعليق بدون حساب", wantReg: "هل تريد إنشاء حساب؟", notifMsg: "إذا كنت تشعر بالملل أو السأم، فأنشئ حساباً وسأمنحك طاقة جيدة كل يوم ليومك" },
     fa: { news: "اخبار", info: "اطلاعات", market: "بازار", discount: "تخفیف", account: "حساب", fav: "علاقه مندی", notifSec: "بخش اعلان‌ها", login: "ورود", logout: "خروج", email: "ایمیل", empty: "پستی وجود ندارد", ago: "پیش", now: "الان", rep: "پاسخ", del: "حذف", edit: "ویرایش", authErr: "ببخشید، باید حساب کاربری داشته باشید", yes: "بله", no: "خیر", post: "پست‌ها", notif: "اعلان", time_left: "زمان باقی‌مانده:", ads_for: "برای مدت:", pass: "رمز عبور", user: "نام", register: "ساخت حساب", noAcc: "حساب ندارید؟", hasAcc: "حساب دارید؟", authFail: "ایمیل یا رمز عبور اشتباه است", regSuccess: "حساب ساخته شد", post_time: "زمان ارسال:", noComment: "بدون حساب کاربری نمی‌توانید نظر بدهید", wantReg: "آیا می‌خواهید حساب کاربری بسازید؟", notifMsg: "اگر بی حوصله یا خسته هستید، یک حساب کاربری بسازید و من هر روز انرژی خوبی برای روزتان به شما می دهم" }
@@ -103,19 +103,23 @@ function updateBossIcon() {
 
 window.toggleHideItem = (type, value, event) => {
     if (event) event.stopPropagation();
+    if (!hiddenItems[type]) hiddenItems[type] = [];
+    
     if (hiddenItems[type].includes(value)) {
         hiddenItems[type] = hiddenItems[type].filter(i => i !== value);
     } else {
         hiddenItems[type].push(value);
     }
     localStorage.setItem('hiddenItems', JSON.stringify(hiddenItems));
+    
+    // ڕیفرێشکردنی یوا ئای
     updateUIScript();
     updateTabContent(localStorage.getItem('lastMainTab'));
 };
 
 function getHideBtn(type, value) {
     if (!(currentUser && currentUser.email === OWNER_EMAIL)) return "";
-    const isHidden = hiddenItems[type].includes(value);
+    const isHidden = hiddenItems[type] && hiddenItems[type].includes(value);
     return `<i class="fas ${isHidden ? 'fa-eye-slash text-red-500' : 'fa-eye text-green-500'} ml-2 cursor-pointer pointer-events-auto" 
                onclick="toggleHideItem('${type}', '${value}', event)"></i>`;
 }
@@ -135,20 +139,24 @@ window.updateUIScript = () => {
 
     const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
     const langOverlay = document.querySelector('#lang-overlay .lang-grid');
+    
     if (langOverlay) {
         const langs = ['ku', 'en', 'ar', 'fa'];
         langOverlay.innerHTML = langs.map(l => {
-            const isHiddenByBoss = hiddenItems.langs.includes(l);
-            const langName = l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'));
+            // پشکنین: ئایا ئەم زمانە پۆستی تێدایە؟
+            const hasPosts = allPosts.some(p => p.lang === l);
+            const isHiddenByBoss = hiddenItems.langs && hiddenItems.langs.includes(l);
+
             if (isBoss) {
                 return `<div class="flex items-center justify-between w-full bg-white/5 rounded-xl p-1 mb-2">
-                    <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1">${langName}</button>
+                    <button onclick="changeLanguage('${l}')" class="lang-btn-glass !mb-0 flex-1">${l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'))}</button>
                     ${getHideBtn('langs', l)}
                 </div>`;
-            } else if (!isHiddenByBoss) {
-                return `<button onclick="changeLanguage('${l}')" class="lang-btn-glass">${langName}</button>`;
+            } else {
+                // بۆ بەکارهێنەری ئاسایی: ئەگەر شاردراوەبێت یان پۆستی تێدا نەبێت، نیشانی مەدە
+                if (isHiddenByBoss || !hasPosts) return '';
+                return `<button onclick="changeLanguage('${l}')" class="lang-btn-glass">${l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'))}</button>`;
             }
-            return '';
         }).join('');
     }
 
@@ -156,16 +164,19 @@ window.updateUIScript = () => {
         if(document.getElementById('nav-'+k)) document.getElementById('nav-'+k).innerText = t[k]; 
         const btn = document.getElementById('nav-btn-' + k);
         if (btn) {
-            const isHiddenByBoss = hiddenItems.navs.includes(k);
-            if (k === 'account') {
+            const hasPostsInCategory = allPosts.some(p => p.category === k && p.lang === currentLang);
+            const isHiddenByBoss = hiddenItems.navs && hiddenItems.navs.includes(k);
+
+            if (isBoss) {
                 btn.style.display = 'flex';
+                btn.querySelectorAll('.fa-eye, .fa-eye-slash').forEach(e=>e.remove());
+                btn.insertAdjacentHTML('beforeend', getHideBtn('navs', k));
             } else {
-                if (isBoss) {
-                    btn.style.display = 'flex';
-                    btn.querySelectorAll('.fa-eye, .fa-eye-slash').forEach(e=>e.remove());
-                    btn.insertAdjacentHTML('beforeend', getHideBtn('navs', k));
+                // ئەگەر زمانەکە پۆستی ئەو کاتێگۆرییەی تێدا نەبوو، بیشارەوە
+                if (k !== 'account' && (isHiddenByBoss || !hasPostsInCategory)) {
+                    btn.style.display = 'none';
                 } else {
-                    btn.style.display = (!isHiddenByBoss) ? 'flex' : 'none';
+                    btn.style.display = 'flex';
                 }
             }
         }
@@ -180,9 +191,12 @@ window.updateTabContent = (tab) => {
 
     if (['info', 'market', 'discount'].includes(tab)) {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
-            const isHiddenByBoss = hiddenItems.factions.includes(sub);
+            const isHiddenByBoss = hiddenItems.factions && hiddenItems.factions.includes(sub);
+            const hasPostsInSub = allPosts.some(p => p.category === tab && p.subCategory === sub && p.lang === currentLang);
+            
             if (isBoss) return true;
-            return !isHiddenByBoss; 
+            // شاردنەوە ئەگەر ئۆنەر وتی یان ئەگەر پۆستی تێدا نەبوو
+            return !isHiddenByBoss && hasPostsInSub; 
         });
 
         if (availableSubs.length > 0) {
@@ -602,7 +616,6 @@ window.checkAuthAndAction = (cb) => {
 };
 
 function timeAgo(d) {
-    // چاککردنی کێشەی کات بۆ سێرڤەر
     const dateObj = isNaN(d) ? new Date(d) : new Date(parseInt(d));
     const s = Math.floor((new Date() - dateObj) / 1000);
     const t = uiTrans[currentLang];
