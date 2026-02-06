@@ -38,11 +38,11 @@ async function syncDataWithServer() {
         if (users) {
             registeredUsers = users;
             localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-            // Update current user role from server
+            // Update current user role from server session
             if(currentUser) {
-                const me = users.find(u => u.email === currentUser.email);
-                if(me) {
-                    currentUser = me;
+                const updatedMe = users.find(u => u.email === currentUser.email);
+                if(updatedMe) {
+                    currentUser = updatedMe;
                     localStorage.setItem('user', JSON.stringify(currentUser));
                 }
             }
@@ -80,7 +80,7 @@ async function syncDataWithServer() {
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SMART UI UPDATE (Doesn't reset if user is typing) ---
+        // --- SMART UI UPDATE (No Jump Refresh) ---
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
         if (!isTyping) {
             const currentTab = localStorage.getItem('lastMainTab') || 'news';
@@ -297,10 +297,9 @@ window.updateTabContent = (tab) => {
             }
         }
 
-        const newContent = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
-        // Optimization: Only update DOM if HTML changed
-        if (display.innerHTML !== newContent) {
-            display.innerHTML = newContent;
+        const newHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
+        if (display.innerHTML !== newHTML) {
+            display.innerHTML = newHTML;
         }
     }
 };
@@ -379,11 +378,18 @@ window.renderAuthUI = (mode = 'login') => {
         return;
     }
     
+    const activeId = document.activeElement ? document.activeElement.id : null;
+    const oldEmail = document.getElementById('auth-email')?.value || "";
+    const oldPass = document.getElementById('auth-pass')?.value || "";
+    const oldUser = document.getElementById('reg-user')?.value || "";
+
     if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
     } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}" value="${oldUser}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
     }
+    
+    if(activeId && document.getElementById(activeId)) document.getElementById(activeId).focus();
 };
 
 window.handleLogin = async () => {
@@ -546,6 +552,7 @@ window.filterUserList = (filterType) => {
     if (filterType === 'all') {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
+        // Everyone currently online (Registered + Guests)
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
         const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
@@ -555,7 +562,7 @@ window.filterUserList = (filterType) => {
         }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        // Only show guests who are currently online and don't have accounts
+        // Only online users who don't have accounts
         usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
             name: g.guest_id,
@@ -618,12 +625,12 @@ function renderUsers(users) {
 }
 
 window.toggleUserRole = async (email, newRole) => {
-    if(!confirm(`Change role to ${newRole.toUpperCase()}?`)) return;
+    if(!confirm(`Do you want to change this user's role to ${newRole.toUpperCase()}?`)) return;
     const { error } = await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
     if (!error) {
         await syncDataWithServer();
     } else {
-        alert("Role update failed!");
+        alert("Action failed: " + error.message);
     }
 };
 
@@ -774,3 +781,4 @@ function timeAgo(d) {
     if (s < 60) return t.now;
     if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
     if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
+    if (s < 604800
