@@ -76,21 +76,15 @@ async function syncDataWithServer() {
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
         if (!isTyping) {
             const currentTab = localStorage.getItem('lastMainTab') || 'news';
-            
-            // Background Update only - avoid full content reset if possible
+            // Only update if not on account tab to prevent login reset
             if (currentTab !== 'account') {
-                const display = document.getElementById('content-display');
-                // Only re-render if display is empty or we are specifically updating to show new data
-                if (display && (display.children.length === 0 || display.innerHTML.includes('opacity-30'))) {
-                    updateTabContent(currentTab);
-                }
+                updateTabContent(currentTab);
             }
             
-            // Auto update Admin Stats if open - silent update
+            // Auto update Admin Stats if open
             if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
                 const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
-                const searchVal = document.getElementById('user-search-input')?.value || "";
-                if(!searchVal) filterUserList(activeTab);
+                filterUserList(activeTab);
             }
             updateUIScript();
             updateHeartUI();
@@ -554,8 +548,8 @@ window.filterUserList = (filterType) => {
     if (filterType === 'all') {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
-        // نیشاندانی هەمووان (یوزەر و گویست) کە ئێستا چالاکن
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
+        // فلتەری تەنها ئەو گویستانەی ئێستا ئۆنڵاینن و ئەکاونتیان نییە
         const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
             name: g.guest_id,
@@ -564,7 +558,7 @@ window.filterUserList = (filterType) => {
         }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        // تەنها ئەو گویستانەی ئێستا ئۆنڵاینن و ئەکاونتیان نییە
+        // نیشاندانی تەنها ئەو گویستانەی ئێستا ئۆنڵاینن
         usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
             email: "Guest Access",
             name: g.guest_id,
@@ -626,23 +620,6 @@ function renderUsers(users) {
     }).join('') || '<p class="text-center opacity-20 py-10">No users found</p>';
 }
 
-window.toggleUserRole = async (email) => {
-    if(email === OWNER_EMAIL) return;
-    const user = registeredUsers.find(u => u.email === email);
-    if(!user) return;
-    
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
-    const { error } = await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
-    
-    if(!error) {
-        await syncDataWithServer();
-        const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
-        filterUserList(activeTab);
-    } else {
-        alert("Error updating role");
-    }
-};
-
 function updateCounters() { 
     const now = Date.now(); 
     const ONLINE_LIMIT = 30000;
@@ -687,6 +664,7 @@ async function trackUserActivity() {
     const now = Date.now(); 
     if (currentUser) { 
         await _supabase.from('app_users').update({ lastActive: now }).eq('email', currentUser.email);
+        // ئەگەر یوزەر بوو، با لە لیستی گویست نەمێنێت
         await _supabase.from('guest_activity').upsert([{ guest_id: currentUser.email, lastActive: now }], { onConflict: 'guest_id' });
     } else { 
         let gId = localStorage.getItem('guestId');
