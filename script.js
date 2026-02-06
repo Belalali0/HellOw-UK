@@ -26,18 +26,21 @@ let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 
-// --- Sync Data Function (SILENT UPDATE - NO UI JUMP) ---
+// --- Sync Data Function (Optimized to NOT break UI) ---
 async function syncDataWithServer() {
     try {
+        // Fetch Posts
         const { data: posts } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
         if (posts) allPosts = posts;
 
+        // Fetch Users
         const { data: users } = await _supabase.from('app_users').select('*');
         if (users) {
             registeredUsers = users;
             localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
         }
 
+        // Fetch Comments
         const { data: coms } = await _supabase.from('comments').select('*');
         if (coms) {
             comments = {};
@@ -48,6 +51,7 @@ async function syncDataWithServer() {
             localStorage.setItem('postComments', JSON.stringify(comments));
         }
 
+        // Fetch Likes
         const { data: lks } = await _supabase.from('likes').select('*');
         if (lks) {
             likeCounts = {};
@@ -61,21 +65,33 @@ async function syncDataWithServer() {
             localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
         }
 
+        // Fetch Guests from Server
         const { data: guests } = await _supabase.from('guest_activity').select('*');
         if (guests) {
             guestActivity = guests;
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SILENT UPDATES ---
-        updateCounters();
-        updateHeartUI();
-        updateBossIcon();
-        
-        // Auto update Admin Stats if open (without closing it)
-        if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
-            const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
-            filterUserList(activeTab);
+        // --- SMART UI UPDATE (Silent Update - Prevent Jump) ---
+        const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+        if (!isTyping) {
+            updateCounters();
+            updateHeartUI();
+            updateBossIcon();
+            
+            // Do not refresh the whole UI if the user is browsing, only specific elements
+            const currentTab = localStorage.getItem('lastMainTab') || 'news';
+            if (currentTab !== 'account' && !document.getElementById('comment-modal').style.display === 'flex') {
+                // We update only labels and counts silently
+                const t = uiTrans[currentLang]; 
+                const activeCodeEl = document.getElementById('active-lang-code');
+                if(activeCodeEl) activeCodeEl.innerText = currentLang.toUpperCase(); 
+            }
+            
+            if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
+                const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
+                filterUserList(activeTab);
+            }
         }
     } catch (err) {
         console.error('Sync Error:', err.message);
@@ -84,7 +100,8 @@ async function syncDataWithServer() {
 
 async function syncPostsWithServer() {
     await syncDataWithServer();
-    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
+    const currentTab = localStorage.getItem('lastMainTab') || 'news';
+    updateTabContent(currentTab);
 }
 
 function ensureOwnerAccount() {
@@ -526,26 +543,15 @@ window.filterUserList = (filterType) => {
     if (filterType === 'all') {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
-        // --- FIXED: Online shows Everyone (Users + Non-User Guests) ---
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
         const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT)
-            .filter(g => !registeredUsers.some(u => u.email === g.guest_id)) // Exclude registered users from guest count
-            .map(g => ({
-                email: "Guest Access",
-                name: g.guest_id,
-                role: 'guest',
-                lastActive: g.lastActive
-            }));
+            .filter(g => !registeredUsers.some(u => u.email === g.guest_id))
+            .map(g => ({ email: "Guest Access", name: g.guest_id, role: 'guest', lastActive: g.lastActive }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        // --- FIXED: Guest shows ONLY non-registered users ---
-        usersToDisplay = guestActivity.filter(g => !registeredUsers.some(u => u.email === g.guest_id))
-            .map(g => ({
-                email: "Guest Access",
-                name: g.guest_id,
-                role: 'guest',
-                lastActive: g.lastActive
-            }));
+        usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT)
+            .filter(g => !registeredUsers.some(u => u.email === g.guest_id))
+            .map(g => ({ email: "Guest Access", name: g.guest_id, role: 'guest', lastActive: g.lastActive }));
     }
     
     renderUsers(usersToDisplay); 
@@ -605,16 +611,12 @@ function updateCounters() {
     const now = Date.now(); 
     const ONLINE_LIMIT = 30000;
     
-    const totalUsers = registeredUsers.length;
-    const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
-    const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
-    
-    // Guest Total (Only non-registered)
-    const totalActualGuests = guestActivity.filter(g => !registeredUsers.some(u => u.email === g.guest_id)).length;
+    const onlineRegCount = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
+    const onlineGuestCount = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
 
-    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
-    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = (onlineReg + onlineGuests); 
-    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = totalActualGuests; 
+    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = registeredUsers.length; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = (onlineRegCount + onlineGuestCount); 
+    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = onlineGuestCount; 
 }
 
 window.showAllNotifs = () => {
@@ -647,14 +649,14 @@ async function trackUserActivity() {
     const now = Date.now(); 
     if (currentUser) { 
         await _supabase.from('app_users').update({ lastActive: now }).eq('email', currentUser.email);
-        await _supabase.from('guest_activity').upsert([{ guest_id: currentUser.email, lastActive: now }]);
+        await _supabase.from('guest_activity').upsert([{ guest_id: currentUser.email, lastActive: now }], { onConflict: 'guest_id' });
     } else { 
         let gId = localStorage.getItem('guestId');
         if(!gId) {
             gId = 'Guest_' + Math.floor(Math.random()*9000 + 1000);
             localStorage.setItem('guestId', gId);
         }
-        await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }]);
+        await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }], { onConflict: 'guest_id' });
     } 
 }
 
@@ -741,7 +743,8 @@ window.deletePost = async (id) => {
         const { error } = await _supabase.from('posts').delete().eq('id', id);
         if (!error) {
             await syncDataWithServer();
-            updateTabContent(localStorage.getItem('lastMainTab'));
+        } else {
+            alert("Error deleting post");
         }
     } 
 };
@@ -792,7 +795,8 @@ function timeAgo(d) {
     if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
     if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
     if (s < 604800) return Math.floor(s/86400) + "d " + t.ago;
-    return Math.floor(s/604800) + "w " + t.ago;
+    if (s < 2592000) return Math.floor(s/604800) + "w " + t.ago;
+    return Math.floor(s/2592000) + "mo " + t.ago;
 }
 
 function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
