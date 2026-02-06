@@ -65,11 +65,17 @@ async function syncDataWithServer() {
             localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
         }
 
-        // 5. چاککردن بۆ فەچکردنی گێست لە سێرڤەر (ئەمە ئەو بەشەیە کە داوات کردبوو)
+        // 5. فەچکردنی گێست لە سێرڤەر
         const { data: guests } = await _supabase.from('guest_activity').select('*');
         if (guests) {
-            guestActivity = guests.map(g => ({ id: g.guest_id, lastActive: g.lastActive }));
+            guestActivity = guests;
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
+        }
+
+        // ئەگەر مۆداڵی ستات کراوە بوو، نوێی بکەرەوە بێ ڕیفرێش
+        if(document.getElementById('admin-stats-modal').style.display === 'flex') {
+            const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
+            filterUserList(activeTab);
         }
 
         const currentTab = localStorage.getItem('lastMainTab') || 'news';
@@ -88,7 +94,6 @@ async function syncPostsWithServer() {
 function ensureOwnerAccount() {
     const ownerIdx = registeredUsers.findIndex(u => u.email === OWNER_EMAIL);
     if (ownerIdx === -1) {
-        // ئەگەر نەیبوو لە ناوخۆ دروستی بکە، دواتر لە لۆگیندا دەچێتە سێرڤەر
         registeredUsers.push({ email: OWNER_EMAIL, password: 'belal5171', name: 'Belal', role: 'admin', lastActive: Date.now() });
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
     } else {
@@ -129,14 +134,19 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
-    // ناردنی سیگناڵ هەر ١٠ چرکە جارێک بۆ ئەوەی ئۆنڵاینەکان زۆر ورد بن
-    setInterval(trackUserActivity, 10000);
+    // ناردنی سیگناڵ هەر ٥ چرکە جارێک بۆ ئەوەی بێ ڕیفرێش ئۆنڵاینەکان ببینی
+    setInterval(async () => {
+        await trackUserActivity();
+        await syncDataWithServer();
+    }, 5000);
 
     _supabase
         .channel('global-sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => syncDataWithServer())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => syncDataWithServer())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, () => syncDataWithServer())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_users' }, () => syncDataWithServer())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_activity' }, () => syncDataWithServer())
         .subscribe();
 }
 
@@ -392,7 +402,6 @@ window.handleRegister = async () => {
         lastActive: Date.now() 
     };
     
-    // ناردن بۆ Supabase بۆ ئەوەی هەمیشەیی بێت
     const { error } = await _supabase.from('app_users').insert([newUser]);
     if (!error) {
         alert(uiTrans[currentLang].regSuccess); 
@@ -511,7 +520,7 @@ window.closeAdminStats = () => document.getElementById('admin-stats-modal').styl
 
 window.filterUserList = (filterType) => {
     const now = Date.now();
-    const ONLINE_LIMIT = 40000;
+    const ONLINE_LIMIT = 30000; // کەمکرایەوە بۆ ٣٠ چرکە بۆ وردی زیاتر
     
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
     const activeBtn = document.getElementById('btn-stat-' + filterType);
@@ -521,11 +530,19 @@ window.filterUserList = (filterType) => {
     if (filterType === 'all') {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
-        usersToDisplay = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
-    } else if (filterType === 'guest') {
-        usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).map(g => ({
+        // یوسەرە ئۆنڵاینەکان + گێستە ئۆنڵاینەکان
+        const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
+        const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).map(g => ({
             email: "Guest Access",
-            name: g.id,
+            name: g.guest_id,
+            role: 'guest',
+            lastActive: g.lastActive
+        }));
+        usersToDisplay = [...onlineReg, ...onlineGst];
+    } else if (filterType === 'guest') {
+        usersToDisplay = guestActivity.map(g => ({
+            email: "Guest Access",
+            name: g.guest_id,
             role: 'guest',
             lastActive: g.lastActive
         }));
@@ -539,7 +556,7 @@ function renderUsers(users) {
     const list = document.getElementById('admin-user-list'); 
     const isBoss = currentUser?.email === OWNER_EMAIL;
     const now = Date.now();
-    const ONLINE_LIMIT = 40000;
+    const ONLINE_LIMIT = 30000;
 
     list.innerHTML = users.map(u => {
         const isOnline = (now - (u.lastActive || 0)) < ONLINE_LIMIT;
@@ -559,13 +576,13 @@ function renderUsers(users) {
             <div class="flex items-center gap-3">
                 <div class="relative">
                     <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-bold text-xs">
-                        ${(u.name || u.id || "?")[0].toUpperCase()}
+                        ${(u.name || u.guest_id || "?")[0].toUpperCase()}
                     </div>
                     <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0a0a0a] ${isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-gray-500'}"></div>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="font-bold text-sm">${u.name || u.email.split('@')[0]}</span>
+                        <span class="font-bold text-sm">${u.name || (u.role === 'guest' ? u.name : u.email.split('@')[0])}</span>
                         <span class="text-[8px] px-1.5 py-0.5 rounded-md border backdrop-blur-md ${roleColor}">${roleLabel}</span>
                     </div>
                     <span class="text-[10px] opacity-40 italic block">${u.email}</span>
@@ -584,27 +601,17 @@ function renderUsers(users) {
     }).join('') || '<p class="text-center opacity-20 py-10">No users found</p>';
 }
 
-window.toggleUserRole = async (email) => { 
-    if (currentUser?.email !== OWNER_EMAIL) return; 
-    const user = registeredUsers.find(u => u.email === email);
-    if (user) {
-        const newRole = user.role === 'admin' ? 'user' : 'admin';
-        await _supabase.from('app_users').update({ role: newRole }).eq('email', email);
-        await syncDataWithServer();
-    }
-};
-
 function updateCounters() { 
     const now = Date.now(); 
-    const ONLINE_LIMIT = 40000;
+    const ONLINE_LIMIT = 30000;
     
     const totalUsers = registeredUsers.length;
-    const onlineUsers = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
+    const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
     const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).length;
 
     if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
-    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = onlineUsers; 
-    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = onlineGuests; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = (onlineReg + onlineGuests); 
+    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = guestActivity.length; 
 }
 
 window.showAllNotifs = () => {
@@ -643,12 +650,9 @@ async function trackUserActivity() {
             gId = 'Guest_' + Math.floor(Math.random()*9000 + 1000);
             localStorage.setItem('guestId', gId);
         }
-        // چاککردن: ناردنی میوان بۆ سێرڤەر بۆ ئەوەی ئەدمین بیبینێت
+        // دڵنیابوونەوە لەوەی ناردنی گێست بۆ سێرڤەر بە دروستی کار دەکات
         await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }], { onConflict: 'guest_id' });
     } 
-    if(document.getElementById('admin-stats-modal').style.display === 'flex') {
-        updateCounters();
-    }
 }
 
 function checkNewNotifs() { if(!currentUser) return; const lastSeen = parseInt(localStorage.getItem('lastNotifSeen') || 0); const newOnes = allPosts.filter(p => p.category === 'notif' && (p.created_at ? new Date(p.created_at).getTime() : p.id) > lastSeen && p.lang === currentLang); if(newOnes.length > 0) { let i = 0; const inv = setInterval(() => { if(i < newOnes.length) { if(notifOnScreen) fireToast(newOnes[i].title, newOnes[i].desc); i++; } else { clearInterval(inv); localStorage.setItem('lastNotifSeen', Date.now()); } }, 1500); } }
