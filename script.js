@@ -65,6 +65,13 @@ async function syncDataWithServer() {
             localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
         }
 
+        // 5. چاککردن بۆ فەچکردنی گێست لە سێرڤەر (ئەمە ئەو بەشەیە کە داوات کردبوو)
+        const { data: guests } = await _supabase.from('guest_activity').select('*');
+        if (guests) {
+            guestActivity = guests.map(g => ({ id: g.guest_id, lastActive: g.lastActive }));
+            localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
+        }
+
         const currentTab = localStorage.getItem('lastMainTab') || 'news';
         updateTabContent(currentTab);
         updateUIScript();
@@ -636,13 +643,8 @@ async function trackUserActivity() {
             gId = 'Guest_' + Math.floor(Math.random()*9000 + 1000);
             localStorage.setItem('guestId', gId);
         }
-        let gIdx = guestActivity.findIndex(g => g.id === gId); 
-        if(gIdx !== -1) {
-            guestActivity[gIdx].lastActive = now;
-        } else {
-            guestActivity.push({id:gId, lastActive:now}); 
-        }
-        localStorage.setItem('guestActivity', JSON.stringify(guestActivity)); 
+        // چاککردن: ناردنی میوان بۆ سێرڤەر بۆ ئەوەی ئەدمین بیبینێت
+        await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }], { onConflict: 'guest_id' });
     } 
     if(document.getElementById('admin-stats-modal').style.display === 'flex') {
         updateCounters();
