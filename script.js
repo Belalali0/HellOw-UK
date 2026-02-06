@@ -20,6 +20,8 @@ let replyingToId = null;
 let currentFavTab = 'post';
 let lastVisitedSub = JSON.parse(localStorage.getItem('lastVisitedSub')) || {};
 let activeSubCategory = null;
+
+// لێرەدا لیستی یوسەرەکان هەمیشە نوێ دەبێتەوە
 let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
@@ -88,8 +90,8 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
-    // ناردنی سیگناڵ هەر ٣٠ چرکە جارێک بۆ ئەوەی بزانین یوسەرەکە هێشتا ماوە (Online)
-    setInterval(trackUserActivity, 30000);
+    // ناردنی سیگناڵ هەر ١٠ چرکە جارێک بۆ ئەوەی ئۆنڵاینەکان زۆر ورد بن
+    setInterval(trackUserActivity, 10000);
 
     _supabase
         .channel('public:posts')
@@ -321,7 +323,14 @@ window.handleLogin = () => {
     const e = document.getElementById('auth-email').value.trim();
     const p = document.getElementById('auth-pass').value.trim();
     const user = registeredUsers.find(u => u.email === e && u.password === p);
-    if (user) { currentUser = user; localStorage.setItem('user', JSON.stringify(currentUser)); trackUserActivity(); init(); } else { alert(uiTrans[currentLang].authFail); }
+    if (user) { 
+        currentUser = user; 
+        localStorage.setItem('user', JSON.stringify(currentUser)); 
+        trackUserActivity(); 
+        init(); 
+    } else { 
+        alert(uiTrans[currentLang].authFail); 
+    }
 };
 
 window.handleRegister = () => {
@@ -329,10 +338,25 @@ window.handleRegister = () => {
     const e = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-pass').value.trim();
     if (!u || !e || !p) return;
-    if (registeredUsers.some(user => user.email === e)) { alert("Email already exists"); return; }
-    const newUser = { email: e, password: p, name: u, role: e === OWNER_EMAIL ? 'admin' : 'user', lastActive: Date.now() };
-    registeredUsers.push(newUser); localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-    alert(uiTrans[currentLang].regSuccess); renderAuthUI('login');
+    
+    // پشکنین کە ئایا پێشتر دروستکراوە
+    if (registeredUsers.some(user => user.email === e)) { 
+        alert("This Email already exists!"); 
+        return; 
+    }
+    
+    const newUser = { 
+        email: e, 
+        password: p, 
+        name: u, 
+        role: e === OWNER_EMAIL ? 'admin' : 'user', 
+        lastActive: Date.now() 
+    };
+    
+    registeredUsers.push(newUser); 
+    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    alert(uiTrans[currentLang].regSuccess); 
+    renderAuthUI('login');
 };
 
 window.filterBySub = (tab, subName) => { activeSubCategory = subName; lastVisitedSub[tab] = subName; localStorage.setItem('lastVisitedSub', JSON.stringify(lastVisitedSub)); updateTabContent(tab); };
@@ -454,15 +478,19 @@ window.submitNotif = async () => {
     if(lang === currentLang && currentUser && notifOnScreen) fireToast(title || "Notif", desc || "");
 };
 
-window.openAdminStats = () => { document.getElementById('admin-stats-modal').style.display = 'flex'; filterUserList('all'); };
+window.openAdminStats = () => { 
+    document.getElementById('admin-stats-modal').style.display = 'flex'; 
+    filterUserList('all'); 
+};
 window.closeAdminStats = () => document.getElementById('admin-stats-modal').style.display = 'none';
 
 window.filterUserList = (filterType) => {
     const now = Date.now();
-    const ONLINE_LIMIT = 60000; // هەر کەسێک لە ١ خولەکی کۆتاییدا ئەکتیڤ بووبێت بە ئۆنڵاین دادەنرێت
+    const ONLINE_LIMIT = 40000; // هەر کەسێک لە ٤٠ چرکەی کۆتایی چالاک بووبێت
     
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    if(document.getElementById('btn-stat-' + filterType)) document.getElementById('btn-stat-' + filterType).classList.add('active');
+    const activeBtn = document.getElementById('btn-stat-' + filterType);
+    if(activeBtn) activeBtn.classList.add('active');
     
     let usersToDisplay = [];
     if (filterType === 'all') {
@@ -486,7 +514,7 @@ function renderUsers(users) {
     const list = document.getElementById('admin-user-list'); 
     const isBoss = currentUser?.email === OWNER_EMAIL;
     const now = Date.now();
-    const ONLINE_LIMIT = 60000;
+    const ONLINE_LIMIT = 40000;
 
     list.innerHTML = users.map(u => {
         const isOnline = (now - (u.lastActive || 0)) < ONLINE_LIMIT;
@@ -520,7 +548,7 @@ function renderUsers(users) {
                 </div>
             </div>
             <div class="flex flex-col items-end gap-2">
-                <span class="text-[9px] opacity-30">${isOnline ? 'Just now' : timeAgo(u.lastActive)}</span>
+                <span class="text-[9px] opacity-30">${isOnline ? 'Online' : timeAgo(u.lastActive)}</span>
                 ${isBoss && !isUserBoss && u.role !== 'guest' ? `
                     <button onclick="toggleUserRole('${u.email}')" class="px-3 py-1 rounded-full text-[9px] border border-white/10 hover:bg-white/5 transition-all">
                         ${u.role === 'admin' ? 'SET USER' : 'SET ADMIN'}
@@ -543,7 +571,7 @@ window.toggleUserRole = (email) => {
 
 function updateCounters() { 
     const now = Date.now(); 
-    const ONLINE_LIMIT = 60000;
+    const ONLINE_LIMIT = 40000;
     
     const totalUsers = registeredUsers.length;
     const onlineUsers = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
@@ -582,6 +610,10 @@ window.openHeartMenu = () => { document.getElementById('heart-overlay').style.di
 
 function trackUserActivity() { 
     const now = Date.now(); 
+    // هەمیشە لیستی تازە بخوێنەرەوە بۆ دڵنیایی
+    registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+    guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
+
     if (currentUser) { 
         let idx = registeredUsers.findIndex(u => u.email === currentUser.email); 
         if (idx !== -1) { 
@@ -591,8 +623,11 @@ function trackUserActivity() {
         } 
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers)); 
     } else { 
-        let gId = localStorage.getItem('guestId') || 'Guest_'+Math.floor(Math.random()*1000); 
-        localStorage.setItem('guestId', gId); 
+        let gId = localStorage.getItem('guestId');
+        if(!gId) {
+            gId = 'Guest_' + Math.floor(Math.random()*9000 + 1000);
+            localStorage.setItem('guestId', gId);
+        }
         let gIdx = guestActivity.findIndex(g => g.id === gId); 
         if(gIdx !== -1) {
             guestActivity[gIdx].lastActive = now;
@@ -601,7 +636,8 @@ function trackUserActivity() {
         }
         localStorage.setItem('guestActivity', JSON.stringify(guestActivity)); 
     } 
-    // ئەگەر مۆداڵی ستاتس کراوە بوو، نوێی بکەرەوە
+    
+    // ئەگەر مۆداڵی ستاتس کراوە بوو، ڕاستەوخۆ نوێی بکەرەوە
     if(document.getElementById('admin-stats-modal').style.display === 'flex') {
         updateCounters();
     }
