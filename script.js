@@ -112,7 +112,6 @@ window.toggleHideItem = (type, value, event) => {
     }
     localStorage.setItem('hiddenItems', JSON.stringify(hiddenItems));
     
-    // ڕیفرێشکردنی یوا ئای
     updateUIScript();
     updateTabContent(localStorage.getItem('lastMainTab'));
 };
@@ -143,7 +142,6 @@ window.updateUIScript = () => {
     if (langOverlay) {
         const langs = ['ku', 'en', 'ar', 'fa'];
         langOverlay.innerHTML = langs.map(l => {
-            // پشکنین: ئایا ئەم زمانە پۆستی تێدایە؟
             const hasPosts = allPosts.some(p => p.lang === l);
             const isHiddenByBoss = hiddenItems.langs && hiddenItems.langs.includes(l);
 
@@ -153,7 +151,6 @@ window.updateUIScript = () => {
                     ${getHideBtn('langs', l)}
                 </div>`;
             } else {
-                // بۆ بەکارهێنەری ئاسایی: ئەگەر شاردراوەبێت یان پۆستی تێدا نەبێت، نیشانی مەدە
                 if (isHiddenByBoss || !hasPosts) return '';
                 return `<button onclick="changeLanguage('${l}')" class="lang-btn-glass">${l === 'ku' ? 'Kurdî' : (l === 'en' ? 'English' : (l === 'ar' ? 'العربية' : 'فارسی'))}</button>`;
             }
@@ -172,7 +169,6 @@ window.updateUIScript = () => {
                 btn.querySelectorAll('.fa-eye, .fa-eye-slash').forEach(e=>e.remove());
                 btn.insertAdjacentHTML('beforeend', getHideBtn('navs', k));
             } else {
-                // ئەگەر زمانەکە پۆستی ئەو کاتێگۆرییەی تێدا نەبوو، بیشارەوە
                 if (k !== 'account' && (isHiddenByBoss || !hasPostsInCategory)) {
                     btn.style.display = 'none';
                 } else {
@@ -193,9 +189,7 @@ window.updateTabContent = (tab) => {
         const availableSubs = subCategories[tab][currentLang].filter(sub => {
             const isHiddenByBoss = hiddenItems.factions && hiddenItems.factions.includes(sub);
             const hasPostsInSub = allPosts.some(p => p.category === tab && p.subCategory === sub && p.lang === currentLang);
-            
             if (isBoss) return true;
-            // شاردنەوە ئەگەر ئۆنەر وتی یان ئەگەر پۆستی تێدا نەبوو
             return !isHiddenByBoss && hasPostsInSub; 
         });
 
@@ -225,6 +219,12 @@ window.updateTabContent = (tab) => {
         if (['info', 'market', 'discount'].includes(tab) && activeSubCategory) {
             filtered = filtered.filter(p => p.subCategory === activeSubCategory);
         }
+        
+        // ئەگەر ئۆنەر نەبوو، ئەو پۆستانەی لە فاکشنی شاردراوەن نیشان مەدە
+        if (!isBoss) {
+            filtered = filtered.filter(p => !hiddenItems.factions.includes(p.subCategory));
+        }
+
         display.innerHTML = filtered.length ? filtered.map(p => renderPostHTML(p)).join('') : `<div class="text-center py-20 opacity-30">${uiTrans[currentLang].empty}</div>`;
     }
 };
@@ -238,7 +238,8 @@ window.renderPostHTML = (p) => {
     const favList = currentUser ? (userFavorites[currentUser.email] || []) : [];
     const isLiked = favList.some(f => f.id === p.id);
     const mediaHTML = p.media ? `<img src="${p.media}" class="post-media">` : '';
-    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === OWNER_EMAIL);
+    const isBoss = currentUser && currentUser.email === OWNER_EMAIL;
+    const isAdmin = currentUser && (currentUser.role === 'admin' || isBoss);
     const t = uiTrans[currentLang];
     
     let expiryHTML = '';
@@ -270,7 +271,7 @@ window.renderPostHTML = (p) => {
                 <span class="text-[10px] opacity-40 mb-2">${timeAgo(p.created_at || p.id)}</span>
                 <div class="flex gap-3 items-center">
                     ${linkBtnHTML}
-                    ${isAdmin ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40"><i class="fas fa-trash-alt"></i></button>` : ''}
+                    ${isBoss ? `<button onclick="deletePost(${p.id})" class="text-red-500 opacity-40 hover:opacity-100"><i class="fas fa-trash-alt"></i></button>` : ''}
                 </div>
             </div>
             ${p.title ? `<div class="glass-title"><h3 class="font-bold text-lg">${p.title}</h3></div>` : ''}
