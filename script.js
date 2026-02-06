@@ -26,21 +26,18 @@ let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 let guestActivity = JSON.parse(localStorage.getItem('guestActivity')) || [];
 const OWNER_EMAIL = 'belalbelaluk@gmail.com';
 
-// --- Sync Data Function (Optimized to NOT break UI) ---
+// --- Sync Data Function (SILENT UPDATE - NO UI JUMP) ---
 async function syncDataWithServer() {
     try {
-        // Fetch Posts
         const { data: posts } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
         if (posts) allPosts = posts;
 
-        // Fetch Users
         const { data: users } = await _supabase.from('app_users').select('*');
         if (users) {
             registeredUsers = users;
             localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
         }
 
-        // Fetch Comments
         const { data: coms } = await _supabase.from('comments').select('*');
         if (coms) {
             comments = {};
@@ -51,7 +48,6 @@ async function syncDataWithServer() {
             localStorage.setItem('postComments', JSON.stringify(comments));
         }
 
-        // Fetch Likes
         const { data: lks } = await _supabase.from('likes').select('*');
         if (lks) {
             likeCounts = {};
@@ -65,38 +61,21 @@ async function syncDataWithServer() {
             localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
         }
 
-        // Fetch Guests from Server
         const { data: guests } = await _supabase.from('guest_activity').select('*');
         if (guests) {
             guestActivity = guests;
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SMART UI UPDATE (Silent Update - Prevent Jump) ---
-        const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
-        if (!isTyping) {
-            const currentTab = localStorage.getItem('lastMainTab') || 'news';
-            // Only update counts and essential UI elements silently
-            updateCounters();
-            updateHeartUI();
-            updateBossIcon();
-            
-            // Check if we need to update content without resetting entire scroll
-            if (currentTab !== 'account') {
-                // updateUIScript call
-                const t = uiTrans[currentLang]; 
-                const activeCodeEl = document.getElementById('active-lang-code');
-                if(activeCodeEl) activeCodeEl.innerText = currentLang.toUpperCase(); 
-                
-                // Keep the existing tab content but refresh data silently
-                updateUIScript(); 
-            }
-            
-            // Auto update Admin Stats if open
-            if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
-                const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
-                filterUserList(activeTab);
-            }
+        // --- SILENT UPDATES ---
+        updateCounters();
+        updateHeartUI();
+        updateBossIcon();
+        
+        // Auto update Admin Stats if open (without closing it)
+        if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
+            const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
+            filterUserList(activeTab);
         }
     } catch (err) {
         console.error('Sync Error:', err.message);
@@ -105,9 +84,7 @@ async function syncDataWithServer() {
 
 async function syncPostsWithServer() {
     await syncDataWithServer();
-    // Force a visual refresh after manual action
-    const currentTab = localStorage.getItem('lastMainTab') || 'news';
-    updateTabContent(currentTab);
+    updateTabContent(localStorage.getItem('lastMainTab') || 'news');
 }
 
 function ensureOwnerAccount() {
@@ -153,13 +130,11 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
-    // Loop for real-time updates (Silent tracking)
     setInterval(async () => {
         await trackUserActivity();
         await syncDataWithServer();
     }, 5000);
 
-    // Supabase Channels
     _supabase
         .channel('global-sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => syncDataWithServer())
@@ -382,19 +357,11 @@ window.renderAuthUI = (mode = 'login') => {
         return;
     }
     
-    // Check if user is already typing to prevent cursor reset
-    const activeId = document.activeElement ? document.activeElement.id : null;
-    const oldEmail = document.getElementById('auth-email')?.value || "";
-    const oldPass = document.getElementById('auth-pass')?.value || "";
-    const oldUser = document.getElementById('reg-user')?.value || "";
-
     if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
     } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}" value="${oldUser}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
     }
-    
-    if(activeId && document.getElementById(activeId)) document.getElementById(activeId).focus();
 };
 
 window.handleLogin = async () => {
@@ -559,21 +526,26 @@ window.filterUserList = (filterType) => {
     if (filterType === 'all') {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
+        // --- FIXED: Online shows Everyone (Users + Non-User Guests) ---
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
-        const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).map(g => ({
-            email: "Guest Access",
-            name: g.guest_id,
-            role: 'guest',
-            lastActive: g.lastActive
-        }));
+        const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT)
+            .filter(g => !registeredUsers.some(u => u.email === g.guest_id)) // Exclude registered users from guest count
+            .map(g => ({
+                email: "Guest Access",
+                name: g.guest_id,
+                role: 'guest',
+                lastActive: g.lastActive
+            }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        usersToDisplay = guestActivity.map(g => ({
-            email: "Guest Access",
-            name: g.guest_id,
-            role: 'guest',
-            lastActive: g.lastActive
-        }));
+        // --- FIXED: Guest shows ONLY non-registered users ---
+        usersToDisplay = guestActivity.filter(g => !registeredUsers.some(u => u.email === g.guest_id))
+            .map(g => ({
+                email: "Guest Access",
+                name: g.guest_id,
+                role: 'guest',
+                lastActive: g.lastActive
+            }));
     }
     
     renderUsers(usersToDisplay); 
@@ -635,11 +607,14 @@ function updateCounters() {
     
     const totalUsers = registeredUsers.length;
     const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
-    const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT).length;
+    const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
+    
+    // Guest Total (Only non-registered)
+    const totalActualGuests = guestActivity.filter(g => !registeredUsers.some(u => u.email === g.guest_id)).length;
 
     if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
     if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = (onlineReg + onlineGuests); 
-    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = guestActivity.length; 
+    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = totalActualGuests; 
 }
 
 window.showAllNotifs = () => {
@@ -672,13 +647,14 @@ async function trackUserActivity() {
     const now = Date.now(); 
     if (currentUser) { 
         await _supabase.from('app_users').update({ lastActive: now }).eq('email', currentUser.email);
+        await _supabase.from('guest_activity').upsert([{ guest_id: currentUser.email, lastActive: now }]);
     } else { 
         let gId = localStorage.getItem('guestId');
         if(!gId) {
             gId = 'Guest_' + Math.floor(Math.random()*9000 + 1000);
             localStorage.setItem('guestId', gId);
         }
-        await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }], { onConflict: 'guest_id' });
+        await _supabase.from('guest_activity').upsert([{ guest_id: gId, lastActive: now }]);
     } 
 }
 
@@ -765,8 +741,7 @@ window.deletePost = async (id) => {
         const { error } = await _supabase.from('posts').delete().eq('id', id);
         if (!error) {
             await syncDataWithServer();
-        } else {
-            alert("Error deleting post");
+            updateTabContent(localStorage.getItem('lastMainTab'));
         }
     } 
 };
@@ -817,8 +792,7 @@ function timeAgo(d) {
     if (s < 3600) return Math.floor(s/60) + "m " + t.ago;
     if (s < 86400) return Math.floor(s/3600) + "h " + t.ago;
     if (s < 604800) return Math.floor(s/86400) + "d " + t.ago;
-    if (s < 2592000) return Math.floor(s/604800) + "w " + t.ago;
-    return Math.floor(s/2592000) + "mo " + t.ago;
+    return Math.floor(s/604800) + "w " + t.ago;
 }
 
 function toggleAdminBar() { if(currentUser?.email === OWNER_EMAIL) { const bar = document.getElementById('admin-quick-bar'); bar.style.display = bar.style.display === 'none' ? 'flex' : 'none'; } }
