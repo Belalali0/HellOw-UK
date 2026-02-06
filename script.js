@@ -72,26 +72,23 @@ async function syncDataWithServer() {
             localStorage.setItem('guestActivity', JSON.stringify(guestActivity));
         }
 
-        // --- SMART UI UPDATE (Silent Update - Prevent Jump) ---
+        // --- SMART UI UPDATE (Doesn't reset if user is typing) ---
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
         if (!isTyping) {
-            updateCounters();
-            updateHeartUI();
-            updateBossIcon();
-            
-            // Do not refresh the whole UI if the user is browsing, only specific elements
             const currentTab = localStorage.getItem('lastMainTab') || 'news';
-            if (currentTab !== 'account' && !document.getElementById('comment-modal').style.display === 'flex') {
-                // We update only labels and counts silently
-                const t = uiTrans[currentLang]; 
-                const activeCodeEl = document.getElementById('active-lang-code');
-                if(activeCodeEl) activeCodeEl.innerText = currentLang.toUpperCase(); 
+            // Only update if not on account tab to prevent login reset
+            if (currentTab !== 'account') {
+                updateTabContent(currentTab);
             }
             
+            // Auto update Admin Stats if open
             if(document.getElementById('admin-stats-modal') && document.getElementById('admin-stats-modal').style.display === 'flex') {
                 const activeTab = document.querySelector('.stat-card.active')?.id.replace('btn-stat-', '') || 'all';
                 filterUserList(activeTab);
             }
+            updateUIScript();
+            updateHeartUI();
+            updateBossIcon();
         }
     } catch (err) {
         console.error('Sync Error:', err.message);
@@ -100,8 +97,6 @@ async function syncDataWithServer() {
 
 async function syncPostsWithServer() {
     await syncDataWithServer();
-    const currentTab = localStorage.getItem('lastMainTab') || 'news';
-    updateTabContent(currentTab);
 }
 
 function ensureOwnerAccount() {
@@ -147,11 +142,13 @@ async function init() {
     updateNotifToggleUI();
     trackUserActivity();
 
+    // Loop for real-time updates without full UI reset
     setInterval(async () => {
         await trackUserActivity();
         await syncDataWithServer();
     }, 5000);
 
+    // Supabase Channels
     _supabase
         .channel('global-sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => syncDataWithServer())
@@ -374,11 +371,19 @@ window.renderAuthUI = (mode = 'login') => {
         return;
     }
     
+    // Check if user is already typing to prevent cursor reset
+    const activeId = document.activeElement ? document.activeElement.id : null;
+    const oldEmail = document.getElementById('auth-email')?.value || "";
+    const oldPass = document.getElementById('auth-pass')?.value || "";
+    const oldUser = document.getElementById('reg-user')?.value || "";
+
     if (mode === 'login') {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.login}</h2><input id="auth-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="auth-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit" onclick="handleLogin()">${t.login}</button><p class="text-center mt-6 text-xs opacity-50">${t.noAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('register')">${t.register}</span></p></div>`;
     } else {
-        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
+        display.innerHTML = `<div class="glass-card p-6 animate-fade"><h2 class="text-xl font-bold mb-6 text-center">${t.register}</h2><input id="reg-user" type="text" class="auth-input" placeholder="${t.user}" value="${oldUser}"><input id="reg-email" type="email" class="auth-input" placeholder="${t.email}" value="${oldEmail}"><input id="reg-pass" type="password" class="auth-input" placeholder="${t.pass}" value="${oldPass}"><button class="auth-submit !bg-blue-500/20 !text-blue-300" onclick="handleRegister()">${t.register}</button><p class="text-center mt-6 text-xs opacity-50">${t.hasAcc} <span class="text-blue-400 cursor-pointer" onclick="renderAuthUI('login')">${t.login}</span></p></div>`;
     }
+    
+    if(activeId && document.getElementById(activeId)) document.getElementById(activeId).focus();
 };
 
 window.handleLogin = async () => {
@@ -544,14 +549,22 @@ window.filterUserList = (filterType) => {
         usersToDisplay = registeredUsers;
     } else if (filterType === 'online') {
         const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT);
-        const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT)
-            .filter(g => !registeredUsers.some(u => u.email === g.guest_id))
-            .map(g => ({ email: "Guest Access", name: g.guest_id, role: 'guest', lastActive: g.lastActive }));
+        // فلتەری تەنها ئەو گویستانەی ئێستا ئۆنڵاینن و ئەکاونتیان نییە
+        const onlineGst = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
+            email: "Guest Access",
+            name: g.guest_id,
+            role: 'guest',
+            lastActive: g.lastActive
+        }));
         usersToDisplay = [...onlineReg, ...onlineGst];
     } else if (filterType === 'guest') {
-        usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT)
-            .filter(g => !registeredUsers.some(u => u.email === g.guest_id))
-            .map(g => ({ email: "Guest Access", name: g.guest_id, role: 'guest', lastActive: g.lastActive }));
+        // نیشاندانی تەنها ئەو گویستانەی ئێستا ئۆنڵاینن
+        usersToDisplay = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).map(g => ({
+            email: "Guest Access",
+            name: g.guest_id,
+            role: 'guest',
+            lastActive: g.lastActive
+        }));
     }
     
     renderUsers(usersToDisplay); 
@@ -611,12 +624,14 @@ function updateCounters() {
     const now = Date.now(); 
     const ONLINE_LIMIT = 30000;
     
-    const onlineRegCount = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
-    const onlineGuestCount = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
+    const totalUsers = registeredUsers.length;
+    // هەژمارکردنی هەموو ئۆنڵاینەکان
+    const onlineReg = registeredUsers.filter(u => (now - (u.lastActive || 0)) < ONLINE_LIMIT).length;
+    const onlineGuests = guestActivity.filter(g => (now - (g.lastActive || 0)) < ONLINE_LIMIT && !registeredUsers.some(u => u.email === g.guest_id)).length;
 
-    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = registeredUsers.length; 
-    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = (onlineRegCount + onlineGuestCount); 
-    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = onlineGuestCount; 
+    if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = totalUsers; 
+    if(document.getElementById('stat-online-users')) document.getElementById('stat-online-users').innerText = (onlineReg + onlineGuests); 
+    if(document.getElementById('stat-guest-users')) document.getElementById('stat-guest-users').innerText = onlineGuests; 
 }
 
 window.showAllNotifs = () => {
@@ -649,6 +664,7 @@ async function trackUserActivity() {
     const now = Date.now(); 
     if (currentUser) { 
         await _supabase.from('app_users').update({ lastActive: now }).eq('email', currentUser.email);
+        // ئەگەر یوزەر بوو، با لە لیستی گویست نەمێنێت
         await _supabase.from('guest_activity').upsert([{ guest_id: currentUser.email, lastActive: now }], { onConflict: 'guest_id' });
     } else { 
         let gId = localStorage.getItem('guestId');
